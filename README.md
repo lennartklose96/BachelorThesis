@@ -4,12 +4,14 @@ The repo for my bachelor's thesis. mostly used for small documentation and manag
 #### File format for ILP instances
 The format for the generated instances is:
 
-\# of instances
+\# OF INSTANCES <br>
 (start repeat) <br>
 n r h <br>
 t <br>
 c <br>
-rhs <br>
-matrix
-blank line
+RHS <br>
+matrix <br>
+blank line <br>
 (end repeat) <br>
+
+s has been omitted for now, as it's set to s = 1
