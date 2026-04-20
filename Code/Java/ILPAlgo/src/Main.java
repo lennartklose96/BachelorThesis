@@ -1,21 +1,18 @@
 import java.io.IOException;
-import java.util.Arrays;
-import com.gurobi.gurobi.GRBEnv;
-import com.gurobi.gurobi.GRBException;
+import com.gurobi.gurobi.*;
 
 public class Main {
     public static void main(String[] args) throws IOException, GRBException {
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_initial.txt");
-        // Printing n
-        System.out.println(inputs[0].getN());
-        int[][] matrix = inputs[0].getMatrix();
-        // Test printing matrix
-        for (int[] row : matrix) {
-            System.out.println(Arrays.toString(row));
+        for (ILPInstance i : inputs) {
+            int[][] matrix = i.getMatrix();
+            int[] rhs = i.getRhs();
+            int[] t = i.getT();
+            int r = i.getR();
+
+            boolean result = GurobiFeasibilityChecker.isFeasible(matrix, rhs, t, r);
+            System.out.println(result);
         }
-        GRBEnv env = new GRBEnv();
-        System.out.println("Gurobi works!");
-        env.dispose();
     }
 }
