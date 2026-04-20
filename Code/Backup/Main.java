@@ -1,10 +1,8 @@
 import java.io.IOException;
 import java.util.Arrays;
-import com.gurobi.gurobi.GRBEnv;
-import com.gurobi.gurobi.GRBException;
 
 public class Main {
-    public static void main(String[] args) throws IOException, GRBException {
+    public static void main(String[] args) throws IOException {
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_initial.txt");
         // Printing n
@@ -14,8 +12,5 @@ public class Main {
         for (int[] row : matrix) {
             System.out.println(Arrays.toString(row));
         }
-        GRBEnv env = new GRBEnv();
-        System.out.println("Gurobi works!");
-        env.dispose();
     }
 }
