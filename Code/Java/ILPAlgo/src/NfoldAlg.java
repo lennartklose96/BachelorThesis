@@ -65,7 +65,7 @@ public class NfoldAlg {
         // TODO: REMOVE LATER
         System.out.println(K);
         System.out.println(bDownMax);
-        System.out.println(I);
+        System.out.println(iterations);
 
         // TODO: REMOVE LATER
         // System.out.println(Arrays.toString(bUp));
