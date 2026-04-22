@@ -4,7 +4,7 @@ import com.gurobi.gurobi.*;
 public class Main {
     public static void main(String[] args) throws IOException, GRBException {
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_debug.txt");
         for (ILPInstance i : inputs) {
             int[][] matrix = i.getMatrix();
             int[] rhs = i.getRhs();
