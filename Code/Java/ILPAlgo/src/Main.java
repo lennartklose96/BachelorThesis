@@ -14,5 +14,6 @@ public class Main {
             boolean result = GurobiFeasibilityChecker.isFeasible(matrix, rhs, t, r);
             System.out.println(result);
         }
+        GurobiFeasibilityChecker.shutdown();
     }
 }

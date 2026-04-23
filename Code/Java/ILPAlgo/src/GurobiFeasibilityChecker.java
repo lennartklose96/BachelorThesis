@@ -2,6 +2,18 @@ import com.gurobi.gurobi.*;
 
 public class GurobiFeasibilityChecker {
 
+    // Static env to not create environments all the time
+    private static GRBEnv env;
+    static {
+        try {
+            env = new GRBEnv(true);
+            env.set(GRB.IntParam.OutputFlag, 0);
+            env.start();
+        } catch (GRBException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * matrix: full A matrix (r × h)
      * rhs: concatenated (bUp, bDown)
@@ -35,10 +47,7 @@ public class GurobiFeasibilityChecker {
             start[i] = start[i - 1] + t[i - 1];
         }
 
-        GRBEnv env = new GRBEnv(true);
-        env.set(GRB.IntParam.OutputFlag, 0);
-        env.start();
-
+        // Set up Gurobi model
         GRBModel model = new GRBModel(env);
 
         // -----------------------------
@@ -106,12 +115,62 @@ public class GurobiFeasibilityChecker {
         model.optimize();
 
         int status = model.get(GRB.IntAttr.Status);
-
         boolean feasible = (status == GRB.OPTIMAL);
-
         model.dispose();
-        env.dispose();
-
         return feasible;
+    }
+
+    public static boolean isBrickFeasible(int[][] A, int[] v, int b) throws GRBException {
+        // Getting rows and columns
+        int r = A.length;
+        int t = A[0].length;
+
+        // Set up Gurobi model
+        GRBModel model = new GRBModel(env);
+
+        // Condition: x >= 0 and x is integer
+        GRBVar[] x = new GRBVar[t];
+        for (int i = 0; i < t; i++) {
+            x[i] = model.addVar(0.0, GRB.INFINITY, 0.0, GRB.INTEGER, "x_" + i);
+        }
+
+        // Condition: Ax = v
+        for (int i = 0; i < r; i++) {
+            GRBLinExpr expr = new GRBLinExpr();
+            for (int j = 0; j < t; j++) {
+                expr.addTerm(A[i][j], x[j]);
+            }
+            model.addConstr(expr, GRB.EQUAL, v[i], "row_" + i);
+        }
+
+        // Condition: ||x||_1 = b
+        GRBLinExpr sum = new GRBLinExpr();
+        for (int i = 0; i < t; i++) {
+            sum.addTerm(1.0, x[i]);
+        }
+        model.addConstr(sum, GRB.EQUAL, b, "norm");
+
+        // Checking if the expression is feasible
+        model.setObjective(new GRBLinExpr(), GRB.MINIMIZE);
+        model.optimize();
+        int status = model.get(GRB.IntAttr.Status);
+        boolean feasible = (status == GRB.OPTIMAL || status == GRB.SUBOPTIMAL);
+        // Cleaning up the model
+        model.dispose();
+        // Return values
+        return feasible;
+    }
+
+    // Shuts down the env
+    // Call at the end of program!
+    public static void shutdown() {
+        try {
+            if (env != null) {
+                env.dispose();
+                env = null;
+            }
+        } catch (GRBException e) {
+            e.printStackTrace();
+        }
     }
 }

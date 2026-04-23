@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.Arrays;
+import com.gurobi.gurobi.*;
 
 public class NfoldAlg {
 
@@ -30,26 +31,27 @@ public class NfoldAlg {
 
     // Determines the amount of iteration steps in the algorithm
     private static int determineIterationAmount(int K, int bDownMax) {
-        double iterations = log2(((double) bDownMax + K) / (2*K + 1));
-        if ((iterations % 1) == 0) {
-            return (int) iterations + 2;
-        } else {
-            return (int) Math.ceil(iterations) + 1;
-        }
+        double value = ((double) bDownMax + K) / (2.0 * K + 1.0);
+        double iterations = log2(value);
+        return (int) Math.ceil(iterations) + 1;
     }
 
+    /////////////////////////////////
+    /// BUILDING THE B SUBVECTORS ///
+    /////////////////////////////////
+
     // Returns the next instance of bDown for the previous iteration steps
-    private static int[][] deriveBDowns(int[] bDown, int K, int I) {
+    private static int[][] deriveBLowers(int[] bLower, int K, int I) {
         // Stores all values for all iterations for bDown
-        int[][] result = new int[I][bDown.length];
+        int[][] result = new int[I][bLower.length];
         // Initialize final iteration step
-        result[I - 1] = Arrays.copyOf(bDown, bDown.length);
+        result[I - 1] = Arrays.copyOf(bLower, bLower.length);
         // Go over every iteration step
         for (int i = I-2; i >= 0; i--) {
             // Initialize the new array
-            int[] newBDown = new int[bDown.length];
+            int[] newBDown = new int[bLower.length];
             int z;
-            for (int j = 0; j < bDown.length; j++) {
+            for (int j = 0; j < bLower.length; j++) {
                 // Apply inductive logic if entry in next iteration is larger than K
                 if (result[i+1][j] > K) {
                     z = ((result[i + 1][j] % 2) == (K % 2)) ? 0 : 1;
@@ -79,7 +81,18 @@ public class NfoldAlg {
         return result;
     }
 
+    // Derives all the even subproblems given b_k and b~_k
+    private static int[][] deriveEvenProblem(int[][] bDowns, int[][]bSmalls) {
+        int[][] result = new int[bDowns.length][bDowns[0].length];
+        for (int i = 0; i < bDowns.length; i++) {
+            for (int k = 0; k < bDowns[0].length; k++) {
+                result[i][k] = bDowns[i][k] - bSmalls[i][k];
+            }
+        }
+        return result;
+    }
 
+    // TODO: REMOVE (probably)
     /*  ALTERNATIVE METHOD IN CASE THE ORIGINAL ONES FAILS (it should not)
     // Returns the next instance of bDown for the previous iteration steps
     private static int[][] deriveBDowns2(int[] bDown, int K, int I) {
@@ -109,50 +122,127 @@ public class NfoldAlg {
     }
      */
 
+    //////////////////////////////////////
+    /// Solving feasibility for Ax = v ///
+    //////////////////////////////////////
+
+    // Increments a vector read as a number with a given base.
+    // Returns a zero vector if the value is already maxed out (it lopos around).
+    private static void incrementV(int[] v, int base) {
+        int incIndex = v.length-1;
+        boolean found = false;
+        while (!found && incIndex >= 0) {
+            if (v[incIndex] < base) {
+                v[incIndex] += 1;
+                found = true;
+            } else {
+                v[incIndex] = 0;
+                incIndex -= 1;
+            }
+        }
+    }
+
+    // Returns all possible sums of integral vectors that add to v.
+    private static int[][] getVectorCombinations(int[] v) {
+        // TODO: Implement
+        return null;
+    }
+
+    /*
+    Dynamic program to build the base table.
+    The bulk of the computation occurs here.
+    Returns N~(i).
+     */
+    private static boolean[][] buildUpperSmallRHS(int[][][] ABricks, int[][] bLowerSmalls, int n, int K, int delta, int iteration)
+            throws GRBException {
+        // Calculating the number of possible vectors
+        int r = ABricks[0].length;
+        int base = (K * delta) + 1;
+        int vectorAmount = 1;
+        for (int i = 0; i < r; i++) {
+            vectorAmount *= base;
+        }
+        // Initializing base table and dynamic table
+        boolean[][] BT = new boolean[vectorAmount][n];
+        boolean[][] DT = new boolean[vectorAmount][n];
+
+        // Building the base table.
+        // Iterating over every possible vector for each brick
+        int[] v = new int[r];
+        for (int i = 0; i < vectorAmount; i++) {
+            for (int k = 0; k < n; k++) {
+                BT[i][k] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[k], v, bLowerSmalls[iteration][k]);
+            }
+            // Checks the next possible vector
+            incrementV(v, base);
+        }
+
+        // Building the dynamic table.
+        // Majority of the computation happening here.
+
+
+        GurobiFeasibilityChecker.shutdown();
+        return BT;
+    }
+
 
 
     // Checks if a given ILP problem is feasible
-    public static boolean isFeasible(int[][] matrix, int[] rhs, int[] t, int r, int h) {
+    public static boolean isFeasible(int[][] A, int[] rhs, int[] t, int r, int h) throws GRBException {
         // Creating relevant constant values for the algorithm
         int n = t.length;
-        int delta = findLargestAbsValue(matrix, r, h);
+        int delta = findLargestAbsValue(A, r, h);
         int K = (int) Math.ceil(2 * (r+1) * log2(4 * (r+1)) * delta);
         // Creating bUp and bDown initial versions
-        int[] bUp = new int[r];
-        int[] bDown = new int[n];
-        System.arraycopy(rhs, 0, bUp, 0, r);
-        System.arraycopy(rhs, r, bDown, 0, n);
+        int[] bUpper = new int[r];
+        int[] bLower = new int[n];
+        System.arraycopy(rhs, 0, bUpper, 0, r);
+        System.arraycopy(rhs, r, bLower, 0, n);
         // Maximum values in the upper and lower rhs
-        int bUpMax = findMax(bUp);
-        int bDownMax =  findMax(bDown);
+        int bUpMax = findMax(bUpper);
+        int bDownMax =  findMax(bLower);
         // Determine the amount of iterations the algorithm will take
         int iterations = determineIterationAmount(K, bDownMax);
 
         /*
-        Determining the initial bDowns on each iteration step
-        Then, determine the small Problem portion of each bDown as well
+        Determining the initial bDowns on each iteration step.
+        Then, determine the small and even problem portions as well
+        First index = iteration, second index = component.
          */
-        int[][] bDowns = deriveBDowns(bDown, K, iterations);
-        int[][] smallProblem = deriveSmallProblem(bDowns, K);
+        int[][] bLowers = deriveBLowers(bLower, K, iterations);
+        int[][] bLowerSmalls = deriveSmallProblem(bLowers, K);
+        int[][] bLowerEvens = deriveEvenProblem(bLowers, bLowerSmalls); // Might not be necessary? TODO: Figure out if this is needed
 
-
-
+        /*
+        Determining the A bricks.
+        The first index indicates which brick k in n it is.
+         */
+        int[][][] ABricks = new int[n][r][];
+        int startIndex = 0;
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < r; i++) {
+                ABricks[k][i] = new int[t[k]];
+                System.arraycopy(A[i], startIndex, ABricks[k][i], 0, t[k]);
+            }
+            startIndex += t[k];
+        }
 
         // TODO: REMOVE LATER
         System.out.println("Value of K: " + Integer.toString(K));
         System.out.println("Iteration amount: " + Integer.toString(iterations));
 
-        System.out.println(Arrays.toString(bDown));
-        System.out.println(Arrays.toString(bDowns[5]));
-        System.out.println(Arrays.toString(smallProblem[5]));
+        System.out.println(Arrays.toString(bLowers[0]));
+        System.out.println(Arrays.toString(bLowerSmalls[0]));
+        System.out.println(Arrays.toString(bLowerEvens[0]));
+
 
         // TODO: real return value
-        return K > 5;
+        return true;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, GRBException {
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_debug.txt");
         // Testing instance
         int instanceNumber = 0;
         int[][] matrix = inputs[instanceNumber].getMatrix();
