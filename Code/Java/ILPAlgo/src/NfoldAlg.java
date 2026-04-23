@@ -126,27 +126,68 @@ public class NfoldAlg {
     /// Solving feasibility for Ax = v ///
     //////////////////////////////////////
 
-    // Increments a vector read as a number with a given base.
-    // Returns a zero vector if the value is already maxed out (it lopos around).
-    private static void incrementV(int[] v, int base) {
-        int incIndex = v.length-1;
-        boolean found = false;
-        while (!found && incIndex >= 0) {
-            if (v[incIndex] < base) {
-                v[incIndex] += 1;
-                found = true;
-            } else {
-                v[incIndex] = 0;
-                incIndex -= 1;
+    // Gets all integer vectors of dimension r with a maximum size of base
+    private static int[][] getAllVectors(int r, int base, int amount) {
+        // Storing result vectors
+        int[][] result = new int[amount][r];
+        int[] v = new int[r];
+        for (int iteration = 0; iteration < amount; iteration++) {
+            System.arraycopy(v, 0, result[iteration], 0, r);
+            // Incrementing v
+            int i = r-1;
+            boolean incremented = false;
+            while (!incremented && i >= 0) {
+                if (v[i] < base-1) {
+                    v[i]++;
+                    incremented = true;
+                } else {
+                    v[i] = 0;
+                    i--;
+                }
             }
         }
+        return result;
     }
 
     // Returns all possible sums of integral vectors that add to v.
-    private static int[][] getVectorCombinations(int[] v) {
-        // TODO: Implement
-        return null;
+    // Computation heavy!
+    private static int[][][] getVectorCombinations(int[] v) {
+        // Determine the amount of combinations
+        int combinations = 1;
+        for (int component : v) {
+            combinations *= (component + 1);
+        }
+        // Creating the result arrays
+        int length = v.length;
+        int[][] vPrimeList = new int[combinations][length];
+        int[][] vDoublePrimeList = new int[combinations][length];
+        // Working variable
+        int[] current = new int[length];
+
+        // Build every possible combo
+        for (int iteration = 0; iteration < combinations; iteration++) {
+            // Add another entry
+            for (int i = 0; i < length; i++) {
+                vPrimeList[iteration][i] = current[i];
+                vDoublePrimeList[iteration][i] = v[i] - current[i];
+            }
+            // Increment the vector
+            int i = length-1;
+            boolean incremented = false;
+            while(!incremented && i >= 0) {
+                if(current[i] < v[i]) {
+                    current[i]++;
+                    incremented = true;
+                } else {
+                    current[i] = 0;
+                    i--;
+                }
+            }
+        }
+        // Returning the result of each combo
+        return new int[][][] {vPrimeList, vDoublePrimeList};
     }
+
 
     /*
     Dynamic program to build the base table.
@@ -166,22 +207,34 @@ public class NfoldAlg {
         boolean[][] BT = new boolean[vectorAmount][n];
         boolean[][] DT = new boolean[vectorAmount][n];
 
-        // Building the base table.
+        // Building the base table, and the first entry of the dynamic table.
         // Iterating over every possible vector for each brick
-        int[] v = new int[r];
+        int[][] allVectors = getAllVectors(r, base, vectorAmount);
         for (int i = 0; i < vectorAmount; i++) {
             for (int k = 0; k < n; k++) {
-                BT[i][k] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[k], v, bLowerSmalls[iteration][k]);
+                BT[i][k] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[k], allVectors[i], bLowerSmalls[iteration][k]);
             }
-            // Checks the next possible vector
-            incrementV(v, base);
+            // Reusing the loop to also build the first value of the dynamic table
+            DT[i][0] = BT[i][0];
         }
+        // Shutting down the feasibility checker
+        GurobiFeasibilityChecker.shutdown();
 
         // Building the dynamic table.
         // Majority of the computation happening here.
+        /*
+        for (int i = 0; i < vectorAmount; i++) {
+            for (int k = 1; k < n; k++) {
+                // TODO: MAIN COMPUTATION
+                int[][][] vCombos = getVectorCombinations(allVectors[i]);
+                int[][] vPrime = vCombos[0];
+                int[][] vDoublePrime = vCombos[1];
+            }
+        }
+         */
 
 
-        GurobiFeasibilityChecker.shutdown();
+        // TODO: update signature and real return value
         return BT;
     }
 
@@ -235,14 +288,14 @@ public class NfoldAlg {
         System.out.println(Arrays.toString(bLowerSmalls[0]));
         System.out.println(Arrays.toString(bLowerEvens[0]));
 
-
+        boolean[][] BT = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, 0);
         // TODO: real return value
         return true;
     }
 
     public static void main(String[] args) throws IOException, GRBException {
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_debug.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
         // Testing instance
         int instanceNumber = 0;
         int[][] matrix = inputs[instanceNumber].getMatrix();
