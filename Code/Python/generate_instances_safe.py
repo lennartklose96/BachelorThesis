@@ -9,8 +9,8 @@ A_INT_MAX = 2
 X_INT_MIN = 0
 X_INT_MAX = 20
 # Minimum and maximum size of each block
-BLOCKSIZE_MIN = 5
-BLOCKSIZE_MAX = 10
+BLOCKSIZE_MIN = 3
+BLOCKSIZE_MAX = 8
 # Objective function limits
 C_MIN = -10
 C_MAX = 10
@@ -25,8 +25,8 @@ with open("Datasets/dataset_test.txt", "w") as file:
     #############################
 
     # Parameters for generating the instances
-    n = 20
-    r = 2
+    n = 4
+    r = 1
     # Generate matrices
     for instance_num in range(INSTANCES):
         # Generate the sizes of the blocks contained in t
@@ -92,6 +92,13 @@ with open("Datasets/dataset_test.txt", "w") as file:
         #############################################
         # TODO: BREAK INSTANCE! All are feasible atm!
         #############################################
+
+        if random.random() < 0.5:
+            # Pick a LOCAL constraint (these are after the first r entries)
+            idx = random.randint(r, len(rhs) - 1)
+
+            # Force infeasibility: sum of nonnegative vars can't be negative
+            rhs[idx] = -1
 
         # Objective function vector
         c = [random.randint(C_MIN, C_MAX) for _ in range(h)]

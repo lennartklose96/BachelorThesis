@@ -154,7 +154,7 @@ public class GurobiFeasibilityChecker {
         model.setObjective(new GRBLinExpr(), GRB.MINIMIZE);
         model.optimize();
         int status = model.get(GRB.IntAttr.Status);
-        boolean feasible = (status == GRB.OPTIMAL || status == GRB.SUBOPTIMAL);
+        boolean feasible = (status == GRB.OPTIMAL);
         // Cleaning up the model
         model.dispose();
         // Return values
