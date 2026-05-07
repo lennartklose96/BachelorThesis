@@ -10,9 +10,14 @@ public class Main {
             int[] rhs = i.getRhs();
             int[] t = i.getT();
             int r = i.getR();
+            int h = i.getH();
+
 
             boolean result = GurobiFeasibilityChecker.isFeasible(matrix, rhs, t, r);
-            System.out.println(result);
+            boolean result2 = NFoldAlg.isFeasible(matrix, rhs, t, r, h);
+
+            // Checking if Gurobi and Algorithm produce the same results
+            System.out.println(result == result2);
         }
         GurobiFeasibilityChecker.shutdown();
     }
