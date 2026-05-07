@@ -234,11 +234,13 @@ public class NFoldAlg {
             kToDIndex[i] = index;
         }
 
+        /*
         // For each vector in v ~in {0,...,D}^r check the valid indices for v''
         List<List<Integer>> allValidIndices = new ArrayList<>();
         for (int i = 0; i < vectorAmountD; i++) {
             allValidIndices.add(getAllValidIndices(i, baseD, baseK, r));
         }
+         */
 
 
         // Building base table (BT) and dynamic table (DT) for iteration k = 1
@@ -261,7 +263,7 @@ public class NFoldAlg {
             }
             // Building dynamic table
             for (int v = 0; v < vectorAmountD; v++) {
-                validIndices =  allValidIndices.get(v); //getAllValidIndices(v, baseD, baseK, r);
+                validIndices =  getAllValidIndices(v, baseD, baseK, r);
                 boolean feasible = false;
                 int validIndex = 0;
                 int vDoublePrime;
@@ -332,8 +334,8 @@ public class NFoldAlg {
 
         // TODO: REMOVE LATER
         // Helper prints
-        System.out.println("Value of K: " + Integer.toString(K));
-        System.out.println("Iteration amount: " + Integer.toString(iterations));
+        // System.out.println("Value of K: " + Integer.toString(K));
+        // System.out.println("Iteration amount: " + Integer.toString(iterations));
 
         /// MAIN ALGORITHM
         List<int[]> NCurr = new ArrayList<>();
