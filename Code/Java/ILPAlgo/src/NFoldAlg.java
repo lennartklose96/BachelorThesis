@@ -165,35 +165,47 @@ public class NFoldAlg {
             int baseK,
             int r) {
 
+        // Getting the vector limit in base D
         int[] v = new int[r];
         encode(v, vectorIndex, baseD, r);
-        // All possibly vDoublePrime indices
-        List<Integer> validIndices = new ArrayList<>();
         // Get index of the upper bound in the K vector-space by "clamping" the vector
         int[] vClamp = new int[v.length];
         for (int i = 0; i < v.length; i++) {
             vClamp[i] = Math.min(v[i], baseK - 1);
         }
-        int boundIndex = 0;
-        for (int component : vClamp) {
-            boundIndex = boundIndex * baseK + component;
+
+        // All possibly vDoublePrime indices
+        List<Integer> validIndices = new ArrayList<>();
+        // Find all valid indices
+        int[] vDoublePrime = new int[r];
+        int pos = 0;
+        boolean clamped;
+        while (pos >= 0) {
+
+            // Encode current digit vector and add it to results
+            int validIndex = 0;
+            for (int i = 0; i < r; i++) {
+                validIndex = validIndex * baseK + vDoublePrime[i];
+            }
+            validIndices.add(validIndex);
+
+            // Start at the rightmost position
+            pos = r - 1;
+
+            clamped = false;
+            while (pos >= 0 && !clamped) {
+                vDoublePrime[pos]++;
+                // Digit position is within the bounds
+                if (vDoublePrime[pos] <= vClamp[pos]) {
+                    clamped = true;
+                // Iterate to next more significant digit and reset to 0 (carry)
+                } else {
+                    vDoublePrime[pos] = 0;
+                    pos--;
+                }
+            }
         }
 
-        int[] vDoublePrime = new int[r];
-        // Find all valid indices
-        for (int j = 0; j <= boundIndex; j++) {
-            encode(vDoublePrime, j, baseK, r);
-            // Checking if each component is smaller, making it a valid summand
-            boolean valid = true;
-            int k = 0;
-            while (k < v.length && valid) {
-                valid = vDoublePrime[k] <= v[k];
-                k++;
-            }
-            if (valid) {
-                validIndices.add(j);
-            }
-        }
         return validIndices;
     }
 
