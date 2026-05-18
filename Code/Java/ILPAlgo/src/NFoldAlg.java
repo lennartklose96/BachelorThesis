@@ -187,6 +187,7 @@ public class NFoldAlg {
             for (int i = 0; i < r; i++) {
                 validIndex = validIndex * baseK + vDoublePrime[i];
             }
+            // Add the constructed index to the list
             validIndices.add(validIndex);
 
             // Start at the rightmost position
@@ -205,7 +206,6 @@ public class NFoldAlg {
                 }
             }
         }
-
         return validIndices;
     }
 
@@ -269,13 +269,15 @@ public class NFoldAlg {
 
         for (int k = 1; k < n; k++) {
             // Building base table
+            // TODO: Remove
+            // System.out.println(k);
             for (int v = 0; v < vectorAmountK; v++) {
                 encode(kVector, v, baseK, r);
                 BT[v] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[k], kVector, bLowerSmalls[iteration][k]);
             }
             // Building dynamic table
             for (int v = 0; v < vectorAmountD; v++) {
-                validIndices =  getAllValidIndices(v, baseD, baseK, r);
+                validIndices = getAllValidIndices(v, baseD, baseK, r);
                 boolean feasible = false;
                 int validIndex = 0;
                 int vDoublePrime;
@@ -346,8 +348,8 @@ public class NFoldAlg {
 
         // TODO: REMOVE LATER
         // Helper prints
-        // System.out.println("Value of K: " + Integer.toString(K));
-        // System.out.println("Iteration amount: " + Integer.toString(iterations));
+        System.out.println("Value of K: " + Integer.toString(K));
+        System.out.println("Iteration amount: " + Integer.toString(iterations));
 
         /// MAIN ALGORITHM
         List<int[]> NCurr = new ArrayList<>();
@@ -376,9 +378,9 @@ public class NFoldAlg {
 
                     int x = 0;
                     while (x < r && valid) {
-                        int val = (bUpperPrev[x] * 2) + bUpperSmall[x];
-                        candidate[x] = val;
-                        double diff = newBUpper[x] - val;
+                        int doubleVal = (bUpperPrev[x] * 2) + bUpperSmall[x];
+                        candidate[x] = doubleVal;
+                        double diff = newBUpper[x] - doubleVal;
                         maxAbs = Math.max(maxAbs, Math.abs(diff));
                         if (maxAbs > D) {
                             valid = false;
@@ -405,10 +407,12 @@ public class NFoldAlg {
 
     // FOR TESTING ONLY
     public static void main(String[] args) throws IOException, GRBException {
-
+        long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        int count = 0;
         for (ILPInstance i : inputs) {
+            count++;
             int[][] matrix = i.getMatrix();
             int[] rhs = i.getRhs();
             int[] t = i.getT();
@@ -416,8 +420,11 @@ public class NFoldAlg {
             int h = i.getH();
 
             boolean result = isFeasible(matrix, rhs, t, r, h);
-            System.out.println(result);
+            System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
+        long finish = System.currentTimeMillis();
+        long timeElapsed = finish - start;
+        System.out.printf("Time elapsed: %d%n", timeElapsed);
         GurobiFeasibilityChecker.shutdown();
     }
 }

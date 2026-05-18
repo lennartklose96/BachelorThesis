@@ -3,11 +3,14 @@ import random
 # Amount of instances to generate
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
-INT_MIN = 1
-INT_MAX = 5
+A_INT_MIN = 0
+A_INT_MAX = 3
+# Integer minimum and maximum size per entry in x
+X_INT_MIN = 0
+X_INT_MAX = 20
 # Minimum and maximum size of each block
-BLOCKSIZE_MIN = 8
-BLOCKSIZE_MAX = 20
+BLOCKSIZE_MIN = 3
+BLOCKSIZE_MAX = 8
 # Objective function limits
 C_MIN = -10
 C_MAX = 10
@@ -22,18 +25,46 @@ with open("Datasets/dataset_test.txt", "w") as file:
     #############################
 
     # Parameters for generating the instances
-    n = 50
-    r = 2
+    n = 4
+    r = 1
     # Generate matrices
     for instance_num in range(INSTANCES):
         # Generate the sizes of the blocks contained in t
         t = [random.randint(BLOCKSIZE_MIN, BLOCKSIZE_MAX) for _ in range(n)]
-        h = sum(t)
-        A_blocks = []
-        for i in range(n):
-            A = [[random.randint(INT_MIN, INT_MAX) for _ in range(t[i])] for _ in range(r)]
-            A_blocks.append(A)
+        
 
+        ####################
+        ### Generating A ###
+        ####################
+        
+        # Making sure there are no duplicate columns
+        A_blocks = []
+        for block_idx in range(n):
+            seen = set()
+            cols = []
+            iterations = t[block_idx]
+            # Generate columns
+            for _ in range(iterations):
+                # Generate one column
+                col = tuple(random.randint(A_INT_MIN, A_INT_MAX) for _ in range(r))
+                # Avoid duplicates inside the block
+                # Duplicates in columns between blocks are permitted as the local part (B) will differ
+                if col not in seen:
+                    seen.add(col)
+                    cols.append(list(col))
+                else:
+                    # Duplicate found, reduce block width
+                    t[block_idx] -= 1
+            # Convert columns to blocks
+            block = [[0 for _ in range(t[block_idx])] for _ in range(r)]
+            for i in range(len(block)):
+                for j in range(len(block[0])):
+                    block[i][j] = cols[j][i]
+            A_blocks.append(block)
+
+        # Width of the matrix
+        h = sum(t)
+       
         # Upper part of the matrix, global constraints
         global_matrix = []
         for j in range(r):
@@ -56,19 +87,43 @@ with open("Datasets/dataset_test.txt", "w") as file:
         # Final matrix A
         matrix = global_matrix + local_matrix      
 
-        # Average values for integer and block size
-        avg_coeff = (INT_MIN + INT_MAX) / 2
-        avg_block = (BLOCKSIZE_MIN + BLOCKSIZE_MAX) / 2
-        expected_lhs = avg_coeff * avg_block * n
-        # Global and local rhs
-        # Global one much more lenient
-        rhs_up = [random.randint(0, int(expected_lhs * 2)) for _ in range(r)]
-        rhs_down = [random.randint(0, int(avg_coeff * avg_block)) for _ in range(n)]
+        ####################
+        ### Generating x ###
+        ####################
+        x_blocks = []
+        for i in range(n):
+            x_i = [random.randint(X_INT_MIN, X_INT_MAX) for _ in range(t[i])]
+            x_blocks.append(x_i)
+
+        ####################
+        ### Generating b ###
+        ####################    
+       
+        rhs_down = [sum(x_blocks[i]) for i in range(n)]
+        rhs_up = []
+        for k in range(r):
+            total = 0
+            for i in range(n):
+                for j in range(t[i]):
+                    total += A_blocks[i][k][j] * x_blocks[i][j]
+            rhs_up.append(total)
+
         # Final RHS = b
         rhs = rhs_up + rhs_down
 
+        ###############################
+        ### BREAK INSTANCE RANDOMLY ###
+        ###############################
+
+        if random.random() < 0.5:
+            # Pick a LOCAL constraint (these are after the first r entries)
+            idx = random.randint(r, len(rhs) - 1)
+
+            # Force infeasibility: sum of nonnegative vars can't be negative
+            rhs[idx] = -1
+
         # Objective function vector
-        c = [random.randint(INT_MIN, INT_MAX) for _ in range(h)]
+        c = [random.randint(C_MIN, C_MAX) for _ in range(h)]
 
         ####################################
         ### WRITING INSTANCE INFORMATION ###

@@ -10,7 +10,7 @@ public class ILPInstance {
     private int[][] matrix;
 
     // Constructor
-    public ILPInstance(int n, int r, int h, int[] t,  int[] c, int[] rhs, int[][] matrix) {
+    public ILPInstance(int n, int r, int h, int[] t, int[] c, int[] rhs, int[][] matrix) {
         this.n = n;
         this.r = r;
         this.h = h;

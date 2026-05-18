@@ -328,8 +328,8 @@ public class NFoldAlgFull {
 
         // TODO: REMOVE LATER
         // Helper prints
-        System.out.println("Value of K: " + Integer.toString(K));
-        System.out.println("Iteration amount: " + Integer.toString(iterations));
+        // System.out.println("Value of K: " + Integer.toString(K));
+        // System.out.println("Iteration amount: " + Integer.toString(iterations));
 
         /// MAIN ALGORITHM
         List<int[]> NCurr = new ArrayList<>();
@@ -346,7 +346,7 @@ public class NFoldAlgFull {
         for (int i = 1; i < iterations; i++) {
             // Takes a long time
             NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, i);
-            System.out.println("RHS FINISHED BUILDING");
+            // System.out.println("RHS FINISHED BUILDING");
             // Final part, checking all valid solutions
             newBUpper = scaleVector(bUpper, iterations - (i + 1));
             int count = NPrev.size() * NSmall.size();
@@ -371,7 +371,7 @@ public class NFoldAlgFull {
                         NCurr.add(Arrays.copyOf(candidate, r));
                     }
                     count--;
-                    System.out.println(count);
+                    // System.out.println(count);
                 }
             }
             // Swap and free memory
@@ -385,11 +385,19 @@ public class NFoldAlgFull {
         return containsVector(NPrev, bUpper);
     }
 
-    public static void main(String[] args) throws IOException, GRBException {
+    // Determines if a given ILP is feasible using the Jansen-Rohwedder algorithm
+    public static boolean isFeasible(int[][] matrix, int[] rhs) {
+        return false;
+    }
 
+
+    public static void main(String[] args) throws IOException, GRBException {
+        long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        int count = 0;
         for (ILPInstance i : inputs) {
+            count++;
             int[][] matrix = i.getMatrix();
             int[] rhs = i.getRhs();
             int[] t = i.getT();
@@ -397,8 +405,11 @@ public class NFoldAlgFull {
             int h = i.getH();
 
             boolean result2 = isFeasible(matrix, rhs, t, r, h);
-            System.out.println(result2);
+            System.out.printf("ILP instance %d is feasible: %b%n", count, result2);
         }
+        long finish = System.currentTimeMillis();
+        long timeElapsed = finish - start;
+        System.out.printf("Time elapsed: %d%n", timeElapsed);
         GurobiFeasibilityChecker.shutdown();
     }
 }
