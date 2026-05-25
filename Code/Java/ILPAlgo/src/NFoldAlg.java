@@ -348,8 +348,8 @@ public class NFoldAlg {
 
         // TODO: REMOVE LATER
         // Helper prints
-        System.out.println("Value of K: " + Integer.toString(K));
-        System.out.println("Iteration amount: " + Integer.toString(iterations));
+        // System.out.println("Value of K: " + Integer.toString(K));
+        // System.out.println("Iteration amount: " + Integer.toString(iterations));
 
         /// MAIN ALGORITHM
         List<int[]> NCurr = new ArrayList<>();

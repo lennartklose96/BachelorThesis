@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class LarsAlg {
+public class LarsAlgEncode {
 
     // Find the largest absolute value in a matrix
     private static int findLargestAbsValueFull(int[][] matrix) {
@@ -78,6 +78,23 @@ public class LarsAlg {
     /// ENCODING VECTORS ///
     ////////////////////////
 
+    // Encodes an index/decimal number of the given base as a vector of length r
+    // Used to save a lot of memory down the line
+    private static void encode(int[] out, long value, int base, int r) {
+        for (int i = r - 1; i >= 0; i--) {
+            out[i] = (int) value % base;
+            value /= base;
+        }
+    }
+    // Decodes a base-'base' vector into a single integer
+    private static long decode(int[] v, int base) {
+        long value = 0;
+        for (int j : v) {
+            value = value * base + j;
+        }
+        return value;
+    }
+
     // Adds two int vectors
     static int[] add(int[] a, int[] b) {
         int[] res = new int[a.length];
@@ -108,12 +125,12 @@ public class LarsAlg {
         return inBounds;
     }
 
-    // Check if a given vector is in a set
-    private static boolean containsVector(Set<int[]> set, int[] toFind) {
-        boolean found;
-        for  (int[] b : set) {
-            found = Arrays.equals(b, toFind);
-            if (found) {
+    // Check if a given vector is in a list
+    private static boolean containsVector(Set<Long> set, int[] toFind, int m, int base) {
+        int[] v = new int[m];
+        for (long value: set) {
+            encode(v, value, base, m);
+            if (Arrays.equals(v, toFind)) {
                 return true;
             }
         }
@@ -146,54 +163,58 @@ public class LarsAlg {
         int base = 8 * herDisc + 1;
         System.out.printf("Base is %d%n", base);
         // Columns decoded to a number of base 8H+1
-        int[][] cols = new int[A[0].length][A.length];
+        long[] cols = new long[h];
         for (int j = 0; j < A[0].length; j++) {
+            int[] col = new int[A.length];
             for (int i = 0; i < A.length; i++) {
-                cols[j][i] = A[i][j];
+                col[i] = A[i][j];
             }
+            cols[j] = decode(col, base);
         }
         // First iteration of vectors
-        int[][] initialVectors = new int[cols.length + 1][cols[0].length];
+        long[] initialVectors = new long[cols.length + 1];
+        initialVectors[0] = 0;
         System.arraycopy(cols, 0, initialVectors, 1, cols.length);
 
         // Store the previous and current iteration of the dynamic table
-        Set<int[]> prev = new HashSet<>();
-        Set<int[]> current = new HashSet<>();
+        Set<Long> prev = new HashSet<>();
+        Set<Long> current = new HashSet<>();
         // Initialize first iteration
-        for (int[] vector : initialVectors) {
-            System.out.println(Arrays.toString(vector));
-            if (isInBounds(vector, rhs, 0, l, herDisc)) {
+        int[] v = new int[m];
+        for (long vector : initialVectors) {
+            encode(v, vector, base, m);
+            System.out.println(Arrays.toString(v));
+            if (isInBounds(v, rhs, 0, l, herDisc)) {
                 prev.add(vector);
             }
         }
         // Main build of the work
         // Builds the dynamic table
+        int[] bPrime = new int[m];
+        int[] bDoublePrime  = new int[m];
         int[] bSum;
         for (int i = 1; i <= l; i++) {
             System.out.println(i);
             // Iterating over every possible combination of vectors b
-            for (int[] bPrime : prev) {
-                for (int[] bDoublePrime : prev) {
+            for (Long a : prev) {
+                encode(bPrime, a, base, m);
+                for (Long b : prev) {
+                    encode(bDoublePrime, b, base, m);
                     // Checking in bounds condition
                     bSum = add(bPrime, bDoublePrime);
                     if (isInBounds(bSum, rhs, i, l, herDisc)) {
-                        if (!containsVector(current, bSum)) {
-                            current.add(bSum);
-                        }
+                        current.add(decode(bSum, base));
                     }
                 }
             }
             // Swap and free memory
-            Set<int[]> tmp = prev;
+            Set<Long> tmp = prev;
             prev = current;
             current = new HashSet<>();
-            if (prev.contains(rhs)) {
-                return true;
-            }
 
             System.out.println((prev.size()));
         }
-        return prev.contains(rhs);
+        return prev.contains(decode(rhs, base));
     }
 
     public static void main(String[] args) throws IOException {
@@ -212,6 +233,7 @@ public class LarsAlg {
             int h = i.getH();
             // Get the result
             boolean result = isFeasible(matrix, rhs, t, r, h);
+            System.out.println(result);
             // TODO: Remove
             break;
         }

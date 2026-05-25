@@ -5,6 +5,9 @@ INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
 A_INT_MAX = 3
+# Integer minimum and maximum size per entry in RHS
+B_INT_MIN = 20
+B_INT_MAX = 500
 # Integer minimum and maximum size per entry in x
 X_INT_MIN = 0
 X_INT_MAX = 20
@@ -98,29 +101,23 @@ with open("Datasets/dataset_test.txt", "w") as file:
         ####################
         ### Generating b ###
         ####################    
-       
-        rhs_down = [sum(x_blocks[i]) for i in range(n)]
-        rhs_up = []
-        for k in range(r):
-            total = 0
-            for i in range(n):
-                for j in range(t[i]):
-                    total += A_blocks[i][k][j] * x_blocks[i][j]
-            rhs_up.append(total)
 
-        # Final RHS = b
-        rhs = rhs_up + rhs_down
-
-        ###############################
-        ### BREAK INSTANCE RANDOMLY ###
-        ###############################
-
+        # Guaranteed feasibility
         if random.random() < 0.5:
-            # Pick a LOCAL constraint (these are after the first r entries)
-            idx = random.randint(r, len(rhs) - 1)
+            rhs_down = [sum(x_blocks[i]) for i in range(n)]
+            rhs_up = []
+            for k in range(r):
+                total = 0
+                for i in range(n):
+                    for j in range(t[i]):
+                        total += A_blocks[i][k][j] * x_blocks[i][j]
+                rhs_up.append(total)
+            # Final RHS = b
+            rhs = rhs_up + rhs_down
+        # Entirely random rhs, unlikely to be feasible
+        else:
+            rhs = [random.randint(B_INT_MIN, B_INT_MAX) for _ in range(r + n)]
 
-            # Force infeasibility: sum of nonnegative vars can't be negative
-            rhs[idx] = -1
 
         # Objective function vector
         c = [random.randint(C_MIN, C_MAX) for _ in range(h)]
