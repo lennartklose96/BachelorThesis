@@ -1,11 +1,8 @@
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
-public class LarsAlg {
+public class LarsAlgList {
+
 
     /////////////////////////
     /// UTILITY FUNCTIONS ///
@@ -22,6 +19,7 @@ public class LarsAlg {
         return largest;
     }
 
+
     // Checks if a given vector is smaller than the other one
     private static boolean isSmallerComponentWise(int[] v, int[] target) {
         boolean smaller = true;
@@ -35,41 +33,13 @@ public class LarsAlg {
         return smaller;
     }
 
-
-    ////////////////
-    /// ENCODING ///
-    ////////////////
-
-    static int encode(int[] v, int base) {
-        int idx = 0;
-        int mul = 1;
-        for (int x : v) {
-            int add = x * mul;
-            idx += add;
-            mul *= base;
-            // Safety check
-            if (mul < 0) throw new ArithmeticException("overflow in encoding");
+    public static int[] addVectors(int[] a, int[] b) {
+        int n = a.length;
+        int[] res = new int[n];
+        for (int i = 0; i < n; i++) {
+            res[i] = a[i] + b[i];
         }
-        return idx;
-    }
-    // Decodes a base-'base' vector into a single integer
-    private static int[] decode(int value, int base, int m) {
-        int[] v = new int[m];
-        for (int i = 0; i < m; i++) {
-            v[i] = value % base;
-            value /= base;
-        }
-        return v;
-    }
-
-    // Adding vectors to the BitSet
-    static void addVector(BitSet dp, int[] v, int base) {
-        int offset = encode(v, base);
-        BitSet shifted = new BitSet();
-        for (int i = dp.nextSetBit(0); i >= 0; i = dp.nextSetBit(i + 1)) {
-            shifted.set(i + offset);
-        }
-        dp.or(shifted);
+        return res;
     }
 
     ////////////////////////////////
@@ -93,10 +63,10 @@ public class LarsAlg {
         return inBounds;
     }
 
-    // Check if a given vector is in a set
-    private static boolean containsVector(Set<int[]> set, int[] toFind) {
+    // Check if a given vector is a given list
+    private static boolean containsVector(List<int[]> list, int[] toFind) {
         boolean found;
-        for  (int[] b : set) {
+        for  (int[] b : list) {
             found = Arrays.equals(b, toFind);
             if (found) {
                 return true;
@@ -114,7 +84,7 @@ public class LarsAlg {
         int delta = findLargestAbsValue(A);
         // Upper bound for the hereditary discrepancy
         int herDisc = (int) Math.ceil(6 * Math.sqrt((double) h) * delta);
-        System.out.printf("HerDics is: %d%n", herDisc);
+        // System.out.printf("HerDics is: %d%n", herDisc);
         // Vector length for b/rhs
         int m = rhs.length;
         // K for n-fold 
@@ -122,15 +92,15 @@ public class LarsAlg {
         for (int i = r; i < m; i++) {
             K += rhs[i];
         }
-        System.out.printf("Value of K: %d%n", K);
+        // System.out.printf("Value of K: %d%n", K);
         // Getting the number of iterations
         int l = (int) Math.ceil(Math.log(K) / Math.log(6.0 / 5.0));
-        System.out.printf("Iterations: %d%n", l);
+        // System.out.printf("Iterations: %d%n", l);
 
         // The maximum amount of vectors we can check
         // Equal to 8H + 1
         int base = 8 * herDisc + 1;
-        System.out.printf("Base is %d%n", base);
+        // System.out.printf("Base is %d%n", base);
         // Columns decoded to a number of base 8H+1
         int[][] cols = new int[A[0].length][A.length];
         for (int j = 0; j < A[0].length; j++) {
@@ -139,42 +109,31 @@ public class LarsAlg {
             }
         }
 
-        // Bulk computation
-        BitSet prev = new BitSet();
-        prev.set(0);
-        for (int[] v : cols) {
-            prev.set(encode(v, base));
-        }
-
+        List<int[]> prev = new ArrayList<>();
+        // Add zero iteration
+        prev.add(new int[m]);
+        Collections.addAll(prev, cols);
+        // Initializing the sum
+        int[] sum;
         for (int i = 1; i < l; i++) {
-            System.out.printf("Iteration: %d%n", i);
-            BitSet next = new BitSet();
+            // System.out.printf("Iteration: %d%n", i);
+            List<int[]> next = new ArrayList<>();
             // Iterate over all combinations of vectors
             // TODO: Implement FFT
-            for (int a = prev.nextSetBit(0);
-                a >= 0;
-                a = prev.nextSetBit(a + 1)) {
-                for (int b = prev.nextSetBit(a);
-                     b >= 0;
-                     b = prev.nextSetBit(b + 1)) {
-                    int v = a + b;
-                    int[] sum = decode(v, base, m);
+            for (int a = 0; a < prev.size(); a++) {
+                for (int b = a;  b < prev.size(); b++) {
+                    sum = addVectors(prev.get(a), prev.get(b));
                     // System.out.println(Arrays.toString(sum));
-                    // Early prune if the vectors grow too large
-                    if (isSmallerComponentWise(sum, rhs) && isInBounds(sum, rhs, i, l, herDisc)) {
-                        next.set(v);
+                    if (isSmallerComponentWise(sum, rhs)
+                    && isInBounds(sum, rhs, i, l, herDisc)
+                    && !containsVector(next, sum)) {
+                        next.add(sum);
                     }
                 }
             }
-            // TODO: see if this can be optimized
-            /*
-            if (prev.equals(next)) {
-                System.out.println("WASTED ITERATION");
-
-             */
             prev = next;
         }
-        return prev.get(encode(rhs, base));
+        return containsVector(prev, rhs);
     }
 
     public static void main(String[] args) throws IOException {
@@ -194,7 +153,6 @@ public class LarsAlg {
             // Get the result
             boolean result = isFeasible(matrix, rhs, t, r, h);
             System.out.printf("ILP instance %d is feasible: %b%n", count, result);
-            break;
         }
         // long finish = System.currentTimeMillis();
         // long timeElapsed = finish - start;

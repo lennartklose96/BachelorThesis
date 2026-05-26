@@ -1,15 +1,12 @@
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
-public class LarsAlg {
+public class LarsAlgVectors {
 
-    /////////////////////////
+
+    /// //////////////////////
     /// UTILITY FUNCTIONS ///
-    /////////////////////////
+    /// //////////////////////
 
     // Find the largest absolute value in a matrix
     private static int findLargestAbsValue(int[][] matrix) {
@@ -21,6 +18,7 @@ public class LarsAlg {
         }
         return largest;
     }
+
 
     // Checks if a given vector is smaller than the other one
     private static boolean isSmallerComponentWise(int[] v, int[] target) {
@@ -36,45 +34,9 @@ public class LarsAlg {
     }
 
 
-    ////////////////
-    /// ENCODING ///
-    ////////////////
-
-    static int encode(int[] v, int base) {
-        int idx = 0;
-        int mul = 1;
-        for (int x : v) {
-            int add = x * mul;
-            idx += add;
-            mul *= base;
-            // Safety check
-            if (mul < 0) throw new ArithmeticException("overflow in encoding");
-        }
-        return idx;
-    }
-    // Decodes a base-'base' vector into a single integer
-    private static int[] decode(int value, int base, int m) {
-        int[] v = new int[m];
-        for (int i = 0; i < m; i++) {
-            v[i] = value % base;
-            value /= base;
-        }
-        return v;
-    }
-
-    // Adding vectors to the BitSet
-    static void addVector(BitSet dp, int[] v, int base) {
-        int offset = encode(v, base);
-        BitSet shifted = new BitSet();
-        for (int i = dp.nextSetBit(0); i >= 0; i = dp.nextSetBit(i + 1)) {
-            shifted.set(i + offset);
-        }
-        dp.or(shifted);
-    }
-
-    ////////////////////////////////
+    /// /////////////////////////////
     /// MAIN VECTOR CALCULATIONS ///
-    ////////////////////////////////
+    /// /////////////////////////////
 
     private static boolean isInBounds(int[] bPrime, int[] b, int i, int l, int herDisc) {
         double scale = Math.pow(2.0, i - l);
@@ -96,7 +58,7 @@ public class LarsAlg {
     // Check if a given vector is in a set
     private static boolean containsVector(Set<int[]> set, int[] toFind) {
         boolean found;
-        for  (int[] b : set) {
+        for (int[] b : set) {
             found = Arrays.equals(b, toFind);
             if (found) {
                 return true;
@@ -105,32 +67,36 @@ public class LarsAlg {
         return false;
     }
 
-    ///////////////////////////
+    /// ////////////////////////
     /// FEASIBILITY CHECKER ///
-    ///////////////////////////
+    /// ////////////////////////
 
     public static boolean isFeasible(int[][] A, int[] rhs, int[] t, int r, int h) {
         // Largest value in matrix
         int delta = findLargestAbsValue(A);
         // Upper bound for the hereditary discrepancy
-        int herDisc = (int) Math.ceil(6 * Math.sqrt((double) h) * delta);
-        System.out.printf("HerDics is: %d%n", herDisc);
+        double raw = 6.0 * Math.sqrt((double) h) * (double) delta;
+        if (raw > Integer.MAX_VALUE) {
+            throw new ArithmeticException("herDisc overflow");
+        }
+        int herDisc = (int) Math.ceil(raw);
+        // System.out.printf("HerDics is: %d%n", herDisc);
         // Vector length for b/rhs
         int m = rhs.length;
-        // K for n-fold 
-        int K = 0;
+        // K for n-fold
+        long K = 0;
         for (int i = r; i < m; i++) {
             K += rhs[i];
+            if (K > Integer.MAX_VALUE) {
+                throw new ArithmeticException("K overflow");
+            }
         }
-        System.out.printf("Value of K: %d%n", K);
+        // System.out.printf("Value of K: %d%n", K);
         // Getting the number of iterations
         int l = (int) Math.ceil(Math.log(K) / Math.log(6.0 / 5.0));
-        System.out.printf("Iterations: %d%n", l);
+        // System.out.printf("Iterations: %d%n", l);
 
-        // The maximum amount of vectors we can check
-        // Equal to 8H + 1
-        int base = 8 * herDisc + 1;
-        System.out.printf("Base is %d%n", base);
+
         // Columns decoded to a number of base 8H+1
         int[][] cols = new int[A[0].length][A.length];
         for (int j = 0; j < A[0].length; j++) {
@@ -139,46 +105,44 @@ public class LarsAlg {
             }
         }
 
-        // Bulk computation
-        BitSet prev = new BitSet();
-        prev.set(0);
-        for (int[] v : cols) {
-            prev.set(encode(v, base));
+        // Initialize it with iteration i = 0
+        Set<VectorKey> prev = new HashSet<>();
+        // Add zero zero
+        prev.add(new VectorKey(new int[m]));
+        for (int[] col : cols) {
+            prev.add(new VectorKey(col));
         }
-
+        VectorKey sum;
         for (int i = 1; i < l; i++) {
-            System.out.printf("Iteration: %d%n", i);
-            BitSet next = new BitSet();
+            // System.out.printf("Iteration: %d%n", i);
+            Set<VectorKey> next = new HashSet<>();
             // Iterate over all combinations of vectors
             // TODO: Implement FFT
-            for (int a = prev.nextSetBit(0);
-                a >= 0;
-                a = prev.nextSetBit(a + 1)) {
-                for (int b = prev.nextSetBit(a);
-                     b >= 0;
-                     b = prev.nextSetBit(b + 1)) {
-                    int v = a + b;
-                    int[] sum = decode(v, base, m);
-                    // System.out.println(Arrays.toString(sum));
-                    // Early prune if the vectors grow too large
-                    if (isSmallerComponentWise(sum, rhs) && isInBounds(sum, rhs, i, l, herDisc)) {
-                        next.set(v);
+            for (VectorKey bPrime : prev) {
+                for (VectorKey bDoublePrime : prev) {
+                    sum = VectorKey.add(bPrime, bDoublePrime);
+                    // System.out.println(Arrays.toString(sum.getVector()));
+                    if (isSmallerComponentWise(sum.getVector(), rhs)
+                            && isInBounds(sum.getVector(), rhs, i, l, herDisc)) {
+                        next.add(sum);
                     }
                 }
             }
-            // TODO: see if this can be optimized
-            /*
-            if (prev.equals(next)) {
-                System.out.println("WASTED ITERATION");
-
-             */
             prev = next;
+            /*
+            System.out.println("NEXT ITERATION");
+            for (VectorKey key : prev) {
+                System.out.println(Arrays.toString(key.getVector()));
+
+            }
+             */
         }
-        return prev.get(encode(rhs, base));
+        VectorKey rhsVKey = new VectorKey(rhs);
+        return prev.contains(rhsVKey);
     }
 
     public static void main(String[] args) throws IOException {
-        // long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
         // Read instances
@@ -194,10 +158,11 @@ public class LarsAlg {
             // Get the result
             boolean result = isFeasible(matrix, rhs, t, r, h);
             System.out.printf("ILP instance %d is feasible: %b%n", count, result);
-            break;
+
         }
-        // long finish = System.currentTimeMillis();
-        // long timeElapsed = finish - start;
-        // System.out.printf("Time elapsed: %d%n", timeElapsed);
+        long finish = System.currentTimeMillis();
+        long timeElapsed = finish - start;
+        System.out.printf("Time elapsed: %d%n", timeElapsed);
     }
 }
+

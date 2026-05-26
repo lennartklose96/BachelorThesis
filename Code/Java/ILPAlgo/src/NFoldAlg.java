@@ -87,9 +87,14 @@ public class NFoldAlg {
 
     // Determines the amount of iteration steps in the algorithm
     private static int determineIterationAmount(int K, int bDownMax) {
+        // Edge case
+        // TODO: Investigate this one more
+        if (bDownMax == 0) return 1;
         double value = ((double) bDownMax + K) / (2.0 * K + 1.0);
-        double iterations = log2(value);
-        return (int) Math.ceil(iterations) + 1;
+        double log = log2(value);
+        int ceil = (int) Math.ceil(log);
+        boolean isInt = Math.abs(log - Math.round(log)) < 1e-9;
+        return isInt ? ceil + 2 : ceil + 1;
     }
 
     /// //////////////////////////////

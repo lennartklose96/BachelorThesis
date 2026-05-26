@@ -6,14 +6,11 @@ INSTANCES = 100
 A_INT_MIN = 0
 A_INT_MAX = 3
 # Integer minimum and maximum size per entry in RHS
-B_INT_MIN = 20
-B_INT_MAX = 500
-# Integer minimum and maximum size per entry in x
-X_INT_MIN = 0
-X_INT_MAX = 20
+B_INT_MIN = 2
+B_INT_MAX = 5
 # Minimum and maximum size of each block
-BLOCKSIZE_MIN = 3
-BLOCKSIZE_MAX = 8
+BLOCKSIZE_MIN = 1
+BLOCKSIZE_MAX = 3
 # Objective function limits
 C_MIN = -10
 C_MAX = 10
@@ -28,7 +25,7 @@ with open("Datasets/dataset_test.txt", "w") as file:
     #############################
 
     # Parameters for generating the instances
-    n = 4
+    n = 3
     r = 1
     # Generate matrices
     for instance_num in range(INSTANCES):
@@ -95,7 +92,7 @@ with open("Datasets/dataset_test.txt", "w") as file:
         ####################
         x_blocks = []
         for i in range(n):
-            x_i = [random.randint(X_INT_MIN, X_INT_MAX) for _ in range(t[i])]
+            x_i = [random.randint(0, 2) for _ in range(t[i])]
             x_blocks.append(x_i)
 
         ####################
