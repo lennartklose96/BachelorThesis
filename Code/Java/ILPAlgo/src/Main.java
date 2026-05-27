@@ -6,6 +6,8 @@ public class Main {
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
         int count = 0;
+        boolean allPassed = true;
+        int failCount = 0;
         for (ILPInstance i : inputs) {
             count++;
             int[][] matrix = i.getMatrix();
@@ -19,8 +21,15 @@ public class Main {
             boolean algoResult = NFoldAlgLars.isFeasible(matrix, rhs, t, r, h);
             boolean larsResult = LarsAlg.isFeasible(matrix, rhs, r, h);
             boolean same = gurobiResult == algoResult && algoResult == larsResult;
+            allPassed = allPassed && same;
+            failCount += same ? 0 : 1;
             // Checking if Gurobi and Algorithm produce the same results
             System.out.printf("Iteration: %d. Same feasibility: %b%n", count, same);
+        }
+        if (allPassed) {
+            System.out.println("All tests passed!");
+        } else {
+            System.out.printf("Not all tests successful. %d tests failed.%n", failCount);
         }
         GurobiFeasibilityChecker.shutdown();
     }
