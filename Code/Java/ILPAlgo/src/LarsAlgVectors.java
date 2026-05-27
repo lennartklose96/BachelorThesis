@@ -24,7 +24,7 @@ public class LarsAlgVectors {
     private static boolean isSmallerComponentWise(int[] v, int[] target) {
         boolean smaller = true;
         int i = 0;
-        while (smaller & i < v.length) {
+        while (smaller && i < v.length) {
             if (v[i] > target[i]) {
                 smaller = false;
             }
@@ -38,19 +38,23 @@ public class LarsAlgVectors {
     /// MAIN VECTOR CALCULATIONS ///
     /// /////////////////////////////
 
-    private static boolean isInBounds(int[] bPrime, int[] b, int i, int l, int herDisc) {
+    // Calculates the bound and mutates the out vector
+    private static void calculateBound(int[] b, double[] out, int i, int l) {
         double scale = Math.pow(2.0, i - l);
-        int x = 0;
+        for (int x = 0; x < b.length; x++) {
+            out[x] = b[x] * scale;
+        }
+    }
+
+    // Returns if the distance between bPrime and the scaled rhs is within the box
+    private static boolean isInBounds(int[] bPrime, double[] scaledB, int herDisc) {
+        int i = 0;
         boolean inBounds = true;
-        double first;
-        double second;
-        while (x < b.length && inBounds) {
-            first = bPrime[x];
-            second = b[x] * scale;
-            if (Math.abs(first - second) > 4L * herDisc) {
+        while (i < bPrime.length && inBounds) {
+            if (Math.abs(bPrime[i] - scaledB[i]) > 4L * herDisc) {
                 inBounds = false;
             }
-            x++;
+            i++;
         }
         return inBounds;
     }
@@ -113,9 +117,11 @@ public class LarsAlgVectors {
             prev.add(new VectorKey(col));
         }
         VectorKey sum;
-        for (int i = 1; i < l; i++) {
+        double[] bound = new double[m];
+        for (int i = 1; i <= l; i++) {
             // System.out.printf("Iteration: %d%n", i);
             Set<VectorKey> next = new HashSet<>();
+            calculateBound(rhs, bound, i, l);
             // Iterate over all combinations of vectors
             // TODO: Implement FFT
             for (VectorKey bPrime : prev) {
@@ -123,7 +129,7 @@ public class LarsAlgVectors {
                     sum = VectorKey.add(bPrime, bDoublePrime);
                     // System.out.println(Arrays.toString(sum.getVector()));
                     if (isSmallerComponentWise(sum.getVector(), rhs)
-                            && isInBounds(sum.getVector(), rhs, i, l, herDisc)) {
+                            && isInBounds(sum.getVector(), bound, herDisc)) {
                         next.add(sum);
                     }
                 }
@@ -158,7 +164,6 @@ public class LarsAlgVectors {
             // Get the result
             boolean result = isFeasible(matrix, rhs, t, r, h);
             System.out.printf("ILP instance %d is feasible: %b%n", count, result);
-
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;

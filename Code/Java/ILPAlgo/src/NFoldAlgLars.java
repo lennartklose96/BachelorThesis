@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class NFoldAlgGurobi {
+public class NFoldAlgLars {
 
     /// /////////////////////////////
     /// Generic helper functions ///
@@ -223,10 +223,11 @@ public class NFoldAlgGurobi {
             int[][][] ABricks,
             int[][] bLowerSmalls,
             int n, int K, int delta,
+            int r, int h,
             int iteration)
+
             throws GRBException {
         // Calculating the number of possible vectors
-        int r = ABricks[0].length;
         int baseK = (K * delta) + 1;
         int baseD = (K * delta * n) + 1;
         int vectorAmountK = getAllVectors(r, baseK);
@@ -238,11 +239,12 @@ public class NFoldAlgGurobi {
         boolean[] DTprev = new boolean[vectorAmountD];
 
         // Helper variable
-        int[] kVector =  new int[r];
+        int[] kVector =  new int[r+1];
 
         // Maps the indices of K-Base to the indices of D-Base
         int[] kToDIndex = new int[vectorAmountK];
         for (int i = 0; i < vectorAmountK; i++) {
+            // Encode the vector and add bLowerSmall_k
             encode(kVector, i, baseK, r);
             int index = 0;
             for (int j = 0; j < r; j++) {
@@ -251,34 +253,31 @@ public class NFoldAlgGurobi {
             kToDIndex[i] = index;
         }
 
-        /*
-        // For each vector in v ~in {0,...,D}^r check the valid indices for v''
-        List<List<Integer>> allValidIndices = new ArrayList<>();
-        for (int i = 0; i < vectorAmountD; i++) {
-            allValidIndices.add(getAllValidIndices(i, baseD, baseK, r));
-        }
-         */
-
 
         // Building base table (BT) and dynamic table (DT) for iteration k = 1
         for (int v = 0; v < vectorAmountK; v++) {
+            // Encode and add bLowerSmall_k
             encode(kVector, v, baseK, r);
-            BT[v] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[0], kVector, bLowerSmalls[iteration][0]);
+            kVector[r] = bLowerSmalls[iteration][0];
+            BT[v] = LarsAlg.isFeasible(ABricks[0], kVector, r, h);
             DTprev[v] = BT[v];
         }
 
         // Building base table (BT) and dynamic table (DT) for iteration k = 2 ... n
         // Majority of the computation happening here.
         List<int[]> result = new ArrayList<>();
-        List <Integer> validIndices;
+        List<Integer> validIndices;
 
         for (int k = 1; k < n; k++) {
             // Building base table
             // TODO: Remove
             // System.out.println(k);
+
             for (int v = 0; v < vectorAmountK; v++) {
+                // Encode and add bLowerSmall_k
                 encode(kVector, v, baseK, r);
-                BT[v] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[k], kVector, bLowerSmalls[iteration][k]);
+                kVector[r] = bLowerSmalls[iteration][k];
+                BT[v] = LarsAlg.isFeasible(ABricks[k], kVector, r, h);
             }
             // Building dynamic table
             for (int v = 0; v < vectorAmountD; v++) {
@@ -341,13 +340,16 @@ public class NFoldAlgGurobi {
         Determining the A bricks.
         The first index indicates which brick k in n it is.
          */
-        int[][][] ABricks = new int[n][r][];
+        int[][][] ABricks = new int[n][r+1][];
         int startIndex = 0;
         for (int k = 0; k < n; k++) {
             for (int i = 0; i < r; i++) {
                 ABricks[k][i] = new int[t[k]];
                 System.arraycopy(A[i], startIndex, ABricks[k][i], 0, t[k]);
             }
+            // last row filled with ones
+            ABricks[k][r] = new int[t[k]];
+            Arrays.fill(ABricks[k][r], 1);
             startIndex += t[k];
         }
 
@@ -361,7 +363,7 @@ public class NFoldAlgGurobi {
         List<int[]> NPrev;
         List<int[]> NSmall;
         // Build upper RHS (small problem)
-        NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, 0);
+        NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, 0);
         // System.out.println("RHS FINISHED BUILDING");
         // Initialize N
         NPrev = new ArrayList<>(NSmall);
@@ -370,7 +372,7 @@ public class NFoldAlgGurobi {
         double[] newBUpper;
         for (int i = 1; i < iterations; i++) {
             // Takes a long time
-            NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, i);
+            NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, i);
             // System.out.println("RHS FINISHED BUILDING");
             // Final part, checking all valid solutions
             newBUpper = scaleVector(bUpper, iterations - (i + 1));
@@ -423,7 +425,6 @@ public class NFoldAlgGurobi {
             int[] t = i.getT();
             int r = i.getR();
             int h = i.getH();
-
             boolean result = isFeasible(matrix, rhs, t, r, h);
             System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
