@@ -264,7 +264,7 @@ public class NFoldAlgGurobi {
         for (int v = 0; v < vectorAmountK; v++) {
             encode(kVector, v, baseK, r);
             BT[v] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[0], kVector, bLowerSmalls[iteration][0]);
-            DTprev[v] = BT[v];
+            DTprev[kToDIndex[v]] = BT[v];
         }
 
         // Building base table (BT) and dynamic table (DT) for iteration k = 2 ... n
@@ -319,7 +319,7 @@ public class NFoldAlgGurobi {
         // Creating relevant constant values for the algorithm
         int n = t.length;
         int delta = findLargestAbsValue(A, r, h);
-        int K = (int) Math.ceil(2 * (r + 1) * log2(4 * (r + 1)) * delta);
+        int K = (int) Math.floor(2 * (r + 1) * log2(4 * (r + 1)) * delta);
         int D = delta * K * n;
         // Creating bUpper and bDown initial versions
         int[] bUpper = new int[r];
@@ -414,7 +414,7 @@ public class NFoldAlgGurobi {
     public static void main(String[] args) throws IOException, GRBException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_debug.txt");
         int count = 0;
         for (ILPInstance i : inputs) {
             count++;

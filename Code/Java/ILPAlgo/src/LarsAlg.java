@@ -241,7 +241,7 @@ public class LarsAlg {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_debug2.txt");
         // Read instances
         int count = 0;
         for (ILPInstance i : inputs) {

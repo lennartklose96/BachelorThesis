@@ -4,13 +4,13 @@ import random
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
-A_INT_MAX = 3
+A_INT_MAX = 1
 # Integer minimum and maximum size per entry in RHS
 B_INT_MIN = 5
 B_INT_MAX = 10
 # Minimum and maximum size of each block
 BLOCKSIZE_MIN = 1
-BLOCKSIZE_MAX = 3
+BLOCKSIZE_MAX = 2
 # Objective function limits
 C_MIN = -10
 C_MAX = 10
@@ -25,8 +25,8 @@ with open("Datasets/dataset_test.txt", "w") as file:
     #############################
 
     # Parameters for generating the instances
-    n = 3
-    r = 1
+    n = 4
+    r = 2
     # Generate matrices
     for instance_num in range(INSTANCES):
         # Generate the sizes of the blocks contained in t

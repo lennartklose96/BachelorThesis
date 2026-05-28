@@ -294,7 +294,7 @@ public class NFoldAlgFull {
         // Creating relevant constant values for the algorithm
         int n = t.length;
         int delta = findLargestAbsValue(A, r, h);
-        int K = (int) Math.ceil(2 * (r + 1) * log2(4 * (r + 1)) * delta);
+        int K = (int) Math.floor(2 * (r + 1) * log2(4 * (r + 1)) * delta);
         int D = delta * K * n;
         // Creating bUpper and bDown initial versions
         int[] bUpper = new int[r];

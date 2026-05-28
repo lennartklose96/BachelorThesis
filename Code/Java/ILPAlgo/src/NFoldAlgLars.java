@@ -1,5 +1,3 @@
-import com.gurobi.gurobi.GRBException;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,35 +8,29 @@ public class NFoldAlgLars {
     /// /////////////////////////////
     /// Generic helper functions ///
     /// /////////////////////////////
+    ///
     // Returns a number with log_2
     private static double log2(double x) {
         return Math.log(x) / Math.log(2);
     }
 
-    // Encodes an index/decimal number of the given base  as a vector of length r
+    // Encodes a vector of length r into a single integer using the given base
+    private static int encode(int[] v, int base, int r) {
+        int value = 0;
+        for (int i = 0; i < r; i++) {
+            value = value * base + v[i];
+        }
+        return value;
+    }
+
+    // Decodes an index/decimal number of the given base as a vector of length r
     // Used to save a lot of memory down the line
-    private static void encode(int[] out, int value, int base, int r) {
-        for (int i = r - 1; i >= 0; i--) {
+    private static void decode(int[] out, int value, int base, int r) {
+        for (int i = r-1; i >= 0; i--) {
             out[i] = value % base;
             value /= base;
         }
     }
-
-    // Decodes a vector to an integer
-    static int decode(int[] vector, int base) {
-        int result = 0;
-        for (int digit : vector) {
-            result = result * base + digit;
-        }
-        return result;
-    }
-
-
-    // Returns an array as a string
-    private static String key(int[] v) {
-        return Arrays.toString(v);
-    }
-
 
     // Scales the vector by the given shift to the power of 2
     private static double[] scaleVector(int[] v, int shift) {
@@ -95,6 +87,23 @@ public class NFoldAlgLars {
         int ceil = (int) Math.ceil(log);
         boolean isInt = Math.abs(log - Math.round(log)) < 1e-9;
         return isInt ? ceil + 2 : ceil + 1;
+    }
+
+    // Safely subtracts two encoded vectors and returns their integer encoded result
+    private static int subtractEncoded(int vPrime, int vDoublePrime, int base, int r) {
+        int result = 0;
+        int factor = 1;
+        for (int i = 0; i < r; i++) {
+            int digitV = vPrime % base;
+            int digitV2 = vDoublePrime % base;
+            if (digitV < digitV2) return -1; // invalid (would underflow)
+            int diff = digitV - digitV2;
+            result += diff * factor;
+            vPrime /= base;
+            vDoublePrime /= base;
+            factor *= base;
+        }
+        return result;
     }
 
     /// //////////////////////////////
@@ -172,7 +181,7 @@ public class NFoldAlgLars {
 
         // Getting the vector limit in base D
         int[] v = new int[r];
-        encode(v, vectorIndex, baseD, r);
+        decode(v, vectorIndex, baseD, r);
         // Get index of the upper bound in the K vector-space by "clamping" the vector
         int[] vClamp = new int[v.length];
         for (int i = 0; i < v.length; i++) {
@@ -224,9 +233,7 @@ public class NFoldAlgLars {
             int[][] bLowerSmalls,
             int n, int K, int delta,
             int r, int h,
-            int iteration)
-
-            throws GRBException {
+            int iteration) {
         // Calculating the number of possible vectors
         int baseK = (K * delta) + 1;
         int baseD = (K * delta * n) + 1;
@@ -239,28 +246,30 @@ public class NFoldAlgLars {
         boolean[] DTprev = new boolean[vectorAmountD];
 
         // Helper variable
-        int[] kVector =  new int[r+1];
+        int[] indexVector = new int[r];
 
         // Maps the indices of K-Base to the indices of D-Base
         int[] kToDIndex = new int[vectorAmountK];
         for (int i = 0; i < vectorAmountK; i++) {
-            // Encode the vector and add bLowerSmall_k
-            encode(kVector, i, baseK, r);
+            // Decode the vector properly
+            decode(indexVector, i, baseK, r);
             int index = 0;
-            for (int j = 0; j < r; j++) {
-                index = index * baseD + kVector[j];
+            for (int j = 0; j <= r-1; j++) {
+                index = index * baseD + indexVector[j];
             }
             kToDIndex[i] = index;
         }
 
-
+        // Helper variable
+        int[] kVector =  new int[r+1];
         // Building base table (BT) and dynamic table (DT) for iteration k = 1
         for (int v = 0; v < vectorAmountK; v++) {
             // Encode and add bLowerSmall_k
-            encode(kVector, v, baseK, r);
+            decode(kVector, v, baseK, r);
             kVector[r] = bLowerSmalls[iteration][0];
             BT[v] = LarsAlg.isFeasible(ABricks[0], kVector, r, h);
-            DTprev[v] = BT[v];
+            // Change encoding to D vector space
+            DTprev[kToDIndex[v]] = BT[v];
         }
 
         // Building base table (BT) and dynamic table (DT) for iteration k = 2 ... n
@@ -271,14 +280,18 @@ public class NFoldAlgLars {
         for (int k = 1; k < n; k++) {
             // Building base table
             // TODO: Remove
-            // System.out.println(k);
 
             for (int v = 0; v < vectorAmountK; v++) {
                 // Encode and add bLowerSmall_k
-                encode(kVector, v, baseK, r);
+                decode(kVector, v, baseK, r);
                 kVector[r] = bLowerSmalls[iteration][k];
                 BT[v] = LarsAlg.isFeasible(ABricks[k], kVector, r, h);
             }
+
+            int[] test = new int[r];
+            // Result vectors
+            int[] feasibleVector;
+
             // Building dynamic table
             for (int v = 0; v < vectorAmountD; v++) {
                 validIndices = getAllValidIndices(v, baseD, baseK, r);
@@ -289,6 +302,7 @@ public class NFoldAlgLars {
                 // Big OR statement, checking all possible vector combinations to be valid
                 while (validIndex < validIndices.size() && !feasible) {
                     // Indices corresponding to vectors in the BT and DT space
+
                     vDoublePrime = validIndices.get(validIndex);
                     vPrime = v - kToDIndex[vDoublePrime];
                     feasible = DTprev[vPrime] && BT[vDoublePrime];
@@ -297,14 +311,19 @@ public class NFoldAlgLars {
                 // Add the value to the dynamic table
                 DT[v] = feasible;
                 if (feasible && k == n-1) {
-                    int[] feasibleVector = new int[r];
-                    encode(feasibleVector, v, baseD, r);
+                    feasibleVector = new int[r];
+                    decode(feasibleVector, v, baseD, r);
                     result.add(feasibleVector);
                 }
             }
             // Update the previous iteration
             DTprev = Arrays.copyOf(DT, DT.length);
         }
+        /*
+        for (int[] x : result) {
+            System.out.println(Arrays.toString(x));
+        };
+         */
         return result;
     }
 
@@ -313,12 +332,12 @@ public class NFoldAlgLars {
     /// FEASIBILITY CHECKER ///
     /// ////////////////////////
     // Checks if a given ILP problem is feasible
-    public static boolean isFeasible(int[][] A, int[] rhs, int[] t, int r, int h) throws GRBException {
+    public static boolean isFeasible(int[][] A, int[] rhs, int[] t, int r, int h) {
         /// PREPROCESSING
         // Creating relevant constant values for the algorithm
         int n = t.length;
         int delta = findLargestAbsValue(A, r, h);
-        int K = (int) Math.ceil(2 * (r + 1) * log2(4 * (r + 1)) * delta);
+        int K = (int) Math.floor(2 * (r + 1) * log2(4 * (r + 1)) * delta);
         int D = delta * K * n;
         // Creating bUpper and bDown initial versions
         int[] bUpper = new int[r];
@@ -398,7 +417,7 @@ public class NFoldAlgLars {
                         NCurr.add(Arrays.copyOf(candidate, r));
                     }
                     count--;
-                    // System.out.println(count);
+                    System.out.println(count);
                 }
             }
             // Swap and free memory
@@ -413,7 +432,42 @@ public class NFoldAlgLars {
     }
 
     // FOR TESTING ONLY
-    public static void main(String[] args) throws IOException, GRBException {
+    public static void main(String[] args) throws IOException {
+
+        /*
+        int r = 2;
+        int baseK = 2;
+        int baseD = 4;
+        int vectorIndex = 11;
+        int vectorAmountK = getAllVectors(r, baseK);
+        int[] kVector = new int[r];
+        int[] kToDIndex = new int[vectorAmountK];
+        for (int i = 0; i < vectorAmountK; i++) {
+            // Encode the vector and add bLowerSmall_k
+            decode(kVector, i, baseK, r);
+            int index = 0;
+            for (int j = r-1; j >= 0; j--) {
+                index = index * baseD + kVector[j];
+            }
+            kToDIndex[i] = index;
+        }
+        List<Integer> test = getAllValidIndices(vectorIndex, baseD, baseK, r);
+        int[] v =  new int[r];
+        for (int vDoublePrime : test) {
+            System.out.println("A - B = C ");
+            decode(v, vectorIndex, baseD, r);
+            System.out.println(Arrays.toString(v));
+            decode(v, vDoublePrime, baseK, r);
+            System.out.println(Arrays.toString(v));
+            int vPrime = vectorIndex - kToDIndex[vDoublePrime];
+            decode(v, vPrime, baseD, r);
+            System.out.println(Arrays.toString(v));
+        }
+        */
+
+
+
+
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
@@ -431,6 +485,6 @@ public class NFoldAlgLars {
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
         System.out.printf("Time elapsed: %d%n", timeElapsed);
-        GurobiFeasibilityChecker.shutdown();
+
     }
 }
