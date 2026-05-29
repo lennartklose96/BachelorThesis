@@ -1,37 +1,44 @@
+import com.gurobi.gurobi.GRBException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 
-public class NFoldAlgLars {
+public class NFoldAlgGurobiOld {
 
     /// /////////////////////////////
     /// Generic helper functions ///
     /// /////////////////////////////
-    ///
     // Returns a number with log_2
     private static double log2(double x) {
         return Math.log(x) / Math.log(2);
     }
 
-    // Encodes a vector of length r into a single integer using the given base
-    private static int encode(int[] v, int base, int r) {
-        int value = 0;
-        for (int i = 0; i < r; i++) {
-            value = value * base + v[i];
-        }
-        return value;
-    }
-
-    // Decodes an index/decimal number of the given base as a vector of length r
+    // Encodes an index/decimal number of the given base  as a vector of length r
     // Used to save a lot of memory down the line
-    private static void decode(int[] out, int value, int base, int r) {
-        for (int i = r-1; i >= 0; i--) {
+    private static void encode(int[] out, int value, int base, int r) {
+        for (int i = r - 1; i >= 0; i--) {
             out[i] = value % base;
             value /= base;
         }
     }
+
+    // Decodes a vector to an integer
+    static int decode(int[] vector, int base) {
+        int result = 0;
+        for (int digit : vector) {
+            result = result * base + digit;
+        }
+        return result;
+    }
+
+
+    // Returns an array as a string
+    private static String key(int[] v) {
+        return Arrays.toString(v);
+    }
+
 
     // Scales the vector by the given shift to the power of 2
     private static double[] scaleVector(int[] v, int shift) {
@@ -155,23 +162,56 @@ public class NFoldAlgLars {
          return (int) Math.pow(base, r);
     }
 
-    // Checks if a vector addition for v' with baseD, and v'' with baseK produces a carry
-    private static boolean hasCarry(int vPrime, int vDoublePrime, int baseD, int baseK, int r) {
-        int vD;
-        int vK;
-        int i = r-1;
-        boolean carry = false;
-        while (i >= 0 && !carry) {
-            // Encoded vector coordinate
-            vD = vPrime % baseD;
-            vK = vDoublePrime % baseK;
-            carry = vK + vD >= baseD;
-            // Moving the digit pointer
-            vPrime /= baseD;
-            vDoublePrime /= baseK;
-            i--;
+    // Returns all valid indices for vDoublePrime given a vector allVectorsD[vectorIndex]
+    // The index corresponds to the vectors in allVectorsK
+    private static List<Integer> getAllValidIndices(
+            int vectorIndex,
+            int baseD,
+            int baseK,
+            int r) {
+
+        // Getting the vector limit in base D
+        int[] v = new int[r];
+        encode(v, vectorIndex, baseD, r);
+        // Get index of the upper bound in the K vector-space by "clamping" the vector
+        int[] vClamp = new int[v.length];
+        for (int i = 0; i < v.length; i++) {
+            vClamp[i] = Math.min(v[i], baseK - 1);
         }
-        return carry;
+
+        // All possibly vDoublePrime indices
+        List<Integer> validIndices = new ArrayList<>();
+        // Find all valid indices
+        int[] vDoublePrime = new int[r];
+        int pos = 0;
+        boolean clamped;
+        while (pos >= 0) {
+
+            // Encode current digit vector and add it to results
+            int validIndex = 0;
+            for (int i = 0; i < r; i++) {
+                validIndex = validIndex * baseK + vDoublePrime[i];
+            }
+            // Add the constructed index to the list
+            validIndices.add(validIndex);
+
+            // Start at the rightmost position
+            pos = r - 1;
+
+            clamped = false;
+            while (pos >= 0 && !clamped) {
+                vDoublePrime[pos]++;
+                // Digit position is within the bounds
+                if (vDoublePrime[pos] <= vClamp[pos]) {
+                    clamped = true;
+                // Iterate to next more significant digit and reset to 0 (carry)
+                } else {
+                    vDoublePrime[pos] = 0;
+                    pos--;
+                }
+            }
+        }
+        return validIndices;
     }
 
     /*
@@ -183,91 +223,88 @@ public class NFoldAlgLars {
             int[][][] ABricks,
             int[][] bLowerSmalls,
             int n, int K, int delta,
-            int r, int h,
-            int iteration) {
+            int iteration)
+            throws GRBException {
         // Calculating the number of possible vectors
+        int r = ABricks[0].length;
         int baseK = (K * delta) + 1;
         int baseD = (K * delta * n) + 1;
         int vectorAmountK = getAllVectors(r, baseK);
         int vectorAmountD = getAllVectors(r, baseD);
 
         // Initializing base table and dynamic table
-        BitSet BT = new BitSet();
-        BitSet DT = new BitSet();
-        BitSet DTprev = new BitSet();
+        boolean[] BT = new boolean[vectorAmountK];
+        boolean[] DT = new boolean[vectorAmountD];
+        boolean[] DTprev = new boolean[vectorAmountD];
 
         // Helper variable
-        int[] indexVector = new int[r];
+        int[] kVector =  new int[r];
 
         // Maps the indices of K-Base to the indices of D-Base
         int[] kToDIndex = new int[vectorAmountK];
         for (int i = 0; i < vectorAmountK; i++) {
-            // Decode the vector properly
-            decode(indexVector, i, baseK, r);
-            kToDIndex[i] = encode(indexVector, baseD, r);
+            encode(kVector, i, baseK, r);
+            int index = 0;
+            for (int j = 0; j < r; j++) {
+                index = index * baseD + kVector[j];
+            }
+            kToDIndex[i] = index;
         }
 
-        // Helper variable
-        int[] kVector = new int[r + 1];
+        /*
+        // For each vector in v ~in {0,...,D}^r check the valid indices for v''
+        List<List<Integer>> allValidIndices = new ArrayList<>();
+        for (int i = 0; i < vectorAmountD; i++) {
+            allValidIndices.add(getAllValidIndices(i, baseD, baseK, r));
+        }
+         */
+
+
         // Building base table (BT) and dynamic table (DT) for iteration k = 1
         for (int v = 0; v < vectorAmountK; v++) {
-            // Encode and add bLowerSmall_k
-            decode(kVector, v, baseK, r);
-            kVector[r] = bLowerSmalls[iteration][0];
-            // Setting feasibility
-
-            if (LarsAlg.isFeasible(ABricks[0], kVector, r, h)) {
-                // Set vector as feasible
-                BT.set(v);
-                // Change encoding to D vector space
-                DTprev.set(kToDIndex[v]);
-            }
+            encode(kVector, v, baseK, r);
+            BT[v] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[0], kVector, bLowerSmalls[iteration][0]);
+            DTprev[kToDIndex[v]] = BT[v];
         }
-
 
         // Building base table (BT) and dynamic table (DT) for iteration k = 2 ... n
         // Majority of the computation happening here.
+        List<int[]> result = new ArrayList<>();
+        List <Integer> validIndices;
 
         for (int k = 1; k < n; k++) {
             // Building base table
-            BT.clear();
+            // TODO: Remove
+            // System.out.println(k);
             for (int v = 0; v < vectorAmountK; v++) {
-                // Encode and add bLowerSmall_k
-                decode(kVector, v, baseK, r);
-                kVector[r] = bLowerSmalls[iteration][k];
-                if (LarsAlg.isFeasible(ABricks[k], kVector, r, h)) {
-                    // Set vector as feasible
-                    BT.set(v);
-                }
+                encode(kVector, v, baseK, r);
+                BT[v] = GurobiFeasibilityChecker.isBrickFeasible(ABricks[k], kVector, bLowerSmalls[iteration][k]);
             }
             // Building dynamic table
-            // Checking every set bit in DT[k-1]
-            for (int vPrime = DTprev.nextSetBit(0);
-                vPrime >= 0;
-                vPrime = DTprev.nextSetBit(vPrime + 1)) {
-                // Checking every set bit in BT[k];
-                for (int vDoublePrime = BT.nextSetBit(0);
-                    vDoublePrime >= 0;
-                    vDoublePrime = BT.nextSetBit(vDoublePrime + 1)) {
-                    // Only check vectors that are in bounds of the problem, i.e. produce no carry
-                    if (!hasCarry(vPrime, vDoublePrime, baseD, baseK, r)) {
-                        DT.set(vPrime + kToDIndex[vDoublePrime]);
-                    }
+            for (int v = 0; v < vectorAmountD; v++) {
+                validIndices = getAllValidIndices(v, baseD, baseK, r);
+                boolean feasible = false;
+                int validIndex = 0;
+                int vDoublePrime;
+                int vPrime;
+                // Big OR statement, checking all possible vector combinations to be valid
+                while (validIndex < validIndices.size() && !feasible) {
+                    // Indices corresponding to vectors in the BT and DT space
+                    vDoublePrime = validIndices.get(validIndex);
+                    vPrime = v - kToDIndex[vDoublePrime];
+                    feasible = DTprev[vPrime] && BT[vDoublePrime];
+                    validIndex++;
+                }
+                // Add the value to the dynamic table
+                DT[v] = feasible;
+                if (feasible && k == n-1) {
+                    int[] feasibleVector = new int[r];
+                    encode(feasibleVector, v, baseD, r);
+                    result.add(feasibleVector);
                 }
             }
             // Update the previous iteration
-            DTprev.clear();
-            DTprev.or(DT);
-            DT.clear();
-        }
-
-        // Storing the result
-        List<int[]> result = new ArrayList<>();
-        int[] feasibleVector;
-        for (int v = DTprev.nextSetBit(0); v >= 0; v = DTprev.nextSetBit(v + 1)) {
-            feasibleVector = new int[r];
-            decode(feasibleVector, v, baseD, r);
-            result.add(feasibleVector);
+            DTprev = Arrays.copyOf(DT, DT.length);
         }
         return result;
     }
@@ -277,7 +314,7 @@ public class NFoldAlgLars {
     /// FEASIBILITY CHECKER ///
     /// ////////////////////////
     // Checks if a given ILP problem is feasible
-    public static boolean isFeasible(int[][] A, int[] rhs, int[] t, int r, int h) {
+    public static boolean isFeasible(int[][] A, int[] rhs, int[] t, int r, int h) throws GRBException {
         /// PREPROCESSING
         // Creating relevant constant values for the algorithm
         int n = t.length;
@@ -304,16 +341,13 @@ public class NFoldAlgLars {
         Determining the A bricks.
         The first index indicates which brick k in n it is.
          */
-        int[][][] ABricks = new int[n][r+1][];
+        int[][][] ABricks = new int[n][r][];
         int startIndex = 0;
         for (int k = 0; k < n; k++) {
             for (int i = 0; i < r; i++) {
                 ABricks[k][i] = new int[t[k]];
                 System.arraycopy(A[i], startIndex, ABricks[k][i], 0, t[k]);
             }
-            // last row filled with ones
-            ABricks[k][r] = new int[t[k]];
-            Arrays.fill(ABricks[k][r], 1);
             startIndex += t[k];
         }
 
@@ -327,7 +361,7 @@ public class NFoldAlgLars {
         List<int[]> NPrev;
         List<int[]> NSmall;
         // Build upper RHS (small problem)
-        NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, 0);
+        NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, 0);
         // System.out.println("RHS FINISHED BUILDING");
         // Initialize N
         NPrev = new ArrayList<>(NSmall);
@@ -336,7 +370,7 @@ public class NFoldAlgLars {
         double[] newBUpper;
         for (int i = 1; i < iterations; i++) {
             // Takes a long time
-            NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, i);
+            NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, i);
             // System.out.println("RHS FINISHED BUILDING");
             // Final part, checking all valid solutions
             newBUpper = scaleVector(bUpper, iterations - (i + 1));
@@ -362,7 +396,7 @@ public class NFoldAlgLars {
                         NCurr.add(Arrays.copyOf(candidate, r));
                     }
                     count--;
-                    // System..out.println(count);
+                    // System.out.println(count);
                 }
             }
             // Swap and free memory
@@ -377,11 +411,10 @@ public class NFoldAlgLars {
     }
 
     // FOR TESTING ONLY
-    public static void main(String[] args) throws IOException {
-
+    public static void main(String[] args) throws IOException, GRBException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_debug.txt");
         int count = 0;
         for (ILPInstance i : inputs) {
             count++;
@@ -390,14 +423,13 @@ public class NFoldAlgLars {
             int[] t = i.getT();
             int r = i.getR();
             int h = i.getH();
+
             boolean result = isFeasible(matrix, rhs, t, r, h);
             System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
         System.out.printf("Time elapsed: %d%n", timeElapsed);
-
-
-
+        GurobiFeasibilityChecker.shutdown();
     }
 }
