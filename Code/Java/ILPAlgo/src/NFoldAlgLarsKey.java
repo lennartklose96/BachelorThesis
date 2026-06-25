@@ -1,10 +1,7 @@
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
+import java.util.*;
 
-public class NFoldAlgLars {
+public class NFoldAlgLarsKey {
 
     /// /////////////////////////////
     /// Generic helper functions ///
@@ -175,7 +172,7 @@ public class NFoldAlgLars {
     The bulk of the computation occurs here.
     Returns N~(i).
      */
-    private static List<int[]> buildUpperSmallRHS(
+    private static Set<VectorKey> buildUpperSmallRHS(
             int[][][] ABricks,
             int[][] bLowerSmalls,
             int n, int K, int delta,
@@ -185,7 +182,6 @@ public class NFoldAlgLars {
         int baseK = (K * delta) + 1;
         int baseD = (K * delta * n) + 1;
         int vectorAmountK = (int) Math.pow(baseK, r);
-
 
         // Initializing base table and dynamic table
         BitSet BT = new BitSet();
@@ -257,12 +253,11 @@ public class NFoldAlgLars {
         }
 
         // Storing the result
-        List<int[]> result = new ArrayList<>();
-        int[] feasibleVector;
+        Set<VectorKey> result = new HashSet<>();
+        int[] feasibleVector = new int[r];
         for (int v = DTprev.nextSetBit(0); v >= 0; v = DTprev.nextSetBit(v + 1)) {
-            feasibleVector = new int[r];
             decode(feasibleVector, v, baseD, r);
-            result.add(feasibleVector);
+            result.add(new VectorKey(feasibleVector));
         }
         return result;
     }
@@ -319,16 +314,18 @@ public class NFoldAlgLars {
         // System.out.println(Arrays.toString(rhs));
 
         /// MAIN ALGORITHM
-        List<int[]> NCurr = new ArrayList<>();
-        List<int[]> NPrev;
-        List<int[]> NSmall;
+        Set<VectorKey> NCurr = new HashSet<>();
+        Set<VectorKey> NPrev;
+        Set<VectorKey> NSmall;
         // Build upper RHS (small problem)
         NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, 0);
         // System.out.println("RHS FINISHED BUILDING");
-        // Initialize N
-        NPrev = new ArrayList<>(NSmall);
+        // Initialize NPrev
+        NPrev = new HashSet<>(NSmall);
         // Initializing helper variables
         int[] candidate = new int[r];
+        int[] bUpperPrev;
+        int[] bUpperSmall;
         for (int i = 1; i < iterations; i++) {
             // Building the box boundary bound for later
             // Scaled up to avoid floating point computation
@@ -345,9 +342,11 @@ public class NFoldAlgLars {
             // System.out.println("RHS FINISHED BUILDING");
             // Final part, checking all valid solutions
             int count = NPrev.size() * NSmall.size();
-            for (int[] bUpperPrev : NPrev) {
-                for (int[] bUpperSmall : NSmall) {
-
+            for (VectorKey v1 : NPrev) {
+                for (VectorKey v2 : NSmall) {
+                    // Get the actual vector from the wrapped class
+                    bUpperPrev = v1.getVector();
+                    bUpperSmall = v2.getVector();
                     boolean valid = true;
                     int x = 0;
                     while (x < r && valid) {
@@ -363,22 +362,22 @@ public class NFoldAlgLars {
                         }
                         x++;
                     }
-                    if (valid && !containsVector(NCurr, candidate)) {
-                        NCurr.add(Arrays.copyOf(candidate, r));
+                    // Add it to the set
+                    if (valid) {
+                        NCurr.add(new VectorKey(candidate));
                     }
                     count--;
                     // System.out.println(count);
                 }
             }
             // Swap and free memory
-            List<int[]> tmp = NPrev;
+            Set<VectorKey> tmp = NPrev;
             NPrev = NCurr;
             NCurr = tmp;
             NCurr.clear();
-
         }
         // Check if the vector is in the final set
-        return containsVector(NPrev, bUpper);
+        return NPrev.contains(new VectorKey(bUpper));
     }
 
     // FOR TESTING ONLY

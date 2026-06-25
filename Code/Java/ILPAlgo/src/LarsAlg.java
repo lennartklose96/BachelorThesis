@@ -206,6 +206,7 @@ public class LarsAlg {
         // Box boundary
         double[] bound = new double[m];
         // Iterate over pairs
+        int rhsEncoded = encode(rhs, base);
         for (int i = 1; i <= l; i++) {
             // System.out.printf("Iteration: %d%n", i);
             // Initialize the next set
@@ -233,9 +234,13 @@ public class LarsAlg {
                 System.out.println("WASTED ITERATION");
             }
             */
+            // Early return
+            if (prev.get(rhsEncoded)) {
+                return true;
+            }
             prev = next;
         }
-        return prev.get(encode(rhs, base));
+        return prev.get(rhsEncoded);
     }
 
     public static void main(String[] args) throws IOException {
