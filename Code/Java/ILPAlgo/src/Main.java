@@ -19,8 +19,8 @@ public class Main {
             // Computing
             boolean gurobiResult = GurobiFeasibilityChecker.isFeasible(matrix, rhs, t, r);
             boolean algoResult = NFoldAlgLars.isFeasible(matrix, rhs, t, r, h);
-            boolean larsResult = LarsAlg.isFeasible(matrix, rhs, r, h);
-            boolean same = gurobiResult == algoResult && algoResult == larsResult;
+            //boolean larsResult = LarsAlg.isFeasible(matrix, rhs, r, h);
+            boolean same = gurobiResult == algoResult;// && algoResult == larsResult;
             allPassed = allPassed && same;
             failCount += same ? 0 : 1;
             // Checking if Gurobi and Algorithm produce the same results

@@ -4,19 +4,18 @@ import random
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
-A_INT_MAX = 2
+A_INT_MAX = 3
 # Integer minimum and maximum size per entry in RHS
 B_INT_MIN = 2
 B_INT_MAX = 5
 # Minimum and maximum size of each block
-BLOCKSIZE_MIN = 2
-BLOCKSIZE_MAX = 5
+BLOCKSIZE = 3
 # Objective function limits
-C_MIN = 5
-C_MAX = 10
+C_MIN = 0
+C_MAX = 0
 
 # Writing output_file
-with open("Datasets/dataset_test.txt", "w") as file:
+with open("Datasets/dataset_stein.txt", "w") as file:
     # Number of instances on the top of the file
     file.write(f"{INSTANCES}\n")
 
@@ -25,14 +24,13 @@ with open("Datasets/dataset_test.txt", "w") as file:
     #############################
 
     # Parameters for generating the instances
-    n = 4
+    n = 3
     r = 1
     # Generate matrices
     for instance_num in range(INSTANCES):
         # Generate the sizes of the blocks contained in t
-        t = [random.randint(BLOCKSIZE_MIN, BLOCKSIZE_MAX) for _ in range(n)]
+        t = [BLOCKSIZE for _ in range(n)]
         
-
         ####################
         ### Generating A ###
         ####################
@@ -44,7 +42,8 @@ with open("Datasets/dataset_test.txt", "w") as file:
             cols = []
             iterations = t[block_idx]
             # Generate columns
-            for _ in range(iterations):
+            count = 0
+            while count < iterations:
                 # Generate one column
                 col = tuple(random.randint(A_INT_MIN, A_INT_MAX) for _ in range(r))
                 # Avoid duplicates inside the block
@@ -52,9 +51,7 @@ with open("Datasets/dataset_test.txt", "w") as file:
                 if col not in seen:
                     seen.add(col)
                     cols.append(list(col))
-                else:
-                    # Duplicate found, reduce block width
-                    t[block_idx] -= 1
+                    count += 1
             # Convert columns to blocks
             block = [[0 for _ in range(t[block_idx])] for _ in range(r)]
             for i in range(len(block)):

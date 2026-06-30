@@ -91,9 +91,9 @@ public class NFoldAlgLars {
         return isInt ? ceil + 2 : ceil + 1;
     }
 
-    /// //////////////////////////////
+    /////////////////////////////////
     /// BUILDING THE B SUBVECTORS ///
-    /// //////////////////////////////
+    /////////////////////////////////
 
     // Returns the next instance of bDown for the previous iteration steps
     private static int[][] deriveBLowers(int[] bLower, int K, int I) {
@@ -316,7 +316,6 @@ public class NFoldAlgLars {
         // Helper prints
         // System.out.println("Value of K: " + Integer.toString(K));
         // System.out.println("Iteration amount: " + Integer.toString(iterations));
-        // System.out.println(Arrays.toString(rhs));
 
         /// MAIN ALGORITHM
         List<int[]> NCurr = new ArrayList<>();
