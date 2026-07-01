@@ -4,7 +4,7 @@ import com.gurobi.gurobi.*;
 public class Main {
     public static void main(String[] args) throws IOException, GRBException {
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_stein.txt");
         int count = 0;
         boolean allPassed = true;
         int failCount = 0;
@@ -13,14 +13,16 @@ public class Main {
             int[][] matrix = i.getMatrix();
             int[] rhs = i.getRhs();
             int[] t = i.getT();
+            int[] c = i.getC();
             int r = i.getR();
             int h = i.getH();
 
             // Computing
             boolean gurobiResult = GurobiFeasibilityChecker.isFeasible(matrix, rhs, t, r);
             boolean algoResult = NFoldAlgLars.isFeasible(matrix, rhs, t, r, h);
-            //boolean larsResult = LarsAlg.isFeasible(matrix, rhs, r, h);
-            boolean same = gurobiResult == algoResult;// && algoResult == larsResult;
+            boolean steinitzResult = Steinitz.isFeasible(matrix, rhs, c, t, r, h);
+            // boolean larsResult = LarsAlg.isFeasible(matrix, rhs, r, h);
+            boolean same = gurobiResult == steinitzResult;// && algoResult == larsResult;
             allPassed = allPassed && same;
             failCount += same ? 0 : 1;
             // Checking if Gurobi and Algorithm produce the same results

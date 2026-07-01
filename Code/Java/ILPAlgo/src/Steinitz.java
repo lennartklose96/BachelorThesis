@@ -1,7 +1,66 @@
+import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Steinitz {
+
+
+    ///////////////////////////////
+    /// Generic helper function ///
+    ///////////////////////////////
+
+    // Sums up two integers vectors componentwise
+    public static int[] add(int[] a, int[] b) {
+        int[] result = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            result[i] = a[i] + b[i];
+        }
+        return result;
+    }
+
+    // Increments a vector given the lower and upper bounds on each index
+    public static boolean incBoundedVector(int[] v, int[] lowerBounds, int[] upperBounds) {
+        // Increment at the back.
+        int i = v.length - 1;
+        boolean incremented = false;
+        // Repeatedly try to increment a number
+        while (i >= 0 && !incremented) {
+            if (v[i] < upperBounds[i]) {
+                v[i]++;
+                incremented = true;
+            } else {
+                v[i] = lowerBounds[i];
+                i--;
+            }
+        }
+        return incremented;
+    }
+
+    // Returns if a vector is in the given bounds given for each index
+    public static boolean isInBounds(int[] v, int[] lowerBounds, int[] upperBounds) {
+        for (int i = 0; i < v.length; i++) {
+            if (!(v[i] >= lowerBounds[i] && v[i] <= upperBounds[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    // Returns all columns for a given block i
+    public static int[][] getBlockColumns(int[][] matrix, int i, int r, int t) {
+        int[][] result = new int[t][r];
+        int baseCol = i * t;
+        for (int k = 0; k < t; k++) {
+            for (int row = 0; row < r; row++) {
+                result[k][row] = matrix[row][baseCol + k];
+            }
+        }
+        return result;
+    }
 
     //////////////////////////////////////
     /// Functions defined in the paper ///
@@ -65,25 +124,81 @@ public class Steinitz {
     }
 
     // Constructs the graph from Construction 1 from the paper
-    private static boolean construction1(int[][] matrix, int[] b, int[] mSigma, int r, int n, int delta) {
+    private static Graph construction1(int[][] matrix, int[] b, int[] c, int[] mSigma, int r, int n, int t, int delta) {
+        /// CALCULATING BOUNDS
         // Helper variable
         int q = mSigma.length;
-        int[][] lowerBounds = new int[r][n];
-        int[][] upperBounds = new int[r][n];
+        int[][] lowerBounds = new int[q][r];
+        int[][] upperBounds = new int[q][r];
         // Getting all the bounds for the vectors v that we can possibly construct
-        for (int k = 0; k < r; k++) {
-            for (int j = 1; j <= n; j++) {
+        for (int j = 1; j <= q; j++) {
+            for (int k = 0; k < r; k++) {
                 int lowerBound = (int) Math.ceil(((double) j/q) * b[k] - n*delta*(n+2*r));
                 int upperBound = (int) Math.floor(((double) j/q) * b[k] + n*delta*(1 + 2*r));
-                lowerBounds[k][j] = lowerBound;
-                upperBounds[k][j] = upperBound;
+                lowerBounds[j-1][k] = lowerBound;
+                upperBounds[j-1][k] = upperBound;
             }
         }
-        return false;
+
+        //////////////////////
+        /// GRAPH BUILDING ///
+        //////////////////////
+        // The graph to add vertices and edges(arcs) to
+        Graph graph = new Graph();
+        /// ADDING VERTICES
+        // Adding the vertices
+        for (int j = 0; j < q; j++) {
+            // Initializing vector v
+            int[] v = Arrays.copyOf(lowerBounds[j], r);
+            // Calculating the amount of incrementation
+            // Alternatively: Use return value
+            int incAmount = 1;
+            for (int k = 0; k < r; k++) {
+                incAmount *= (upperBounds[j][k] - lowerBounds[j][k] + 1);
+            }
+            // Add each vertex to the graph
+            for (int i = 0; i < incAmount; i++) {
+                graph.addVertex(new Graph.Vertex(j+1, Arrays.copyOf(v, r)));
+                incBoundedVector(v, lowerBounds[j], upperBounds[j]);
+            }
+        }
+        // Add the h_(0,0) vertex
+        graph.addVertex(new Graph.Vertex(0, new int[r]));
+
+        /// ADDING EDGES
+        // Reusable variables to store information for the blocks
+        int i;
+        int[][] colVectors;
+        int[] vCol;
+        int[] v2;
+        for (int j = 0; j < q; j++) {
+            // TODO: REMOVE PRINT
+            // System.out.println(j);
+            // Finding out the block index we need to look in
+            i = mSigma[j];
+            colVectors = getBlockColumns(matrix, i-1, r, t);
+            // Check over j-1
+            // Because of how the vertices are defined, j = j-1 in this case
+            for (Graph.Vertex v1 : graph.getLayer(j)) {
+                // Seeing if the combinations are in bound
+                for (int k = 0; k < t; k++) {
+                    vCol = colVectors[k];
+                    v2 = add(v1.v(), vCol);
+                    if (isInBounds(v2, lowerBounds[j], upperBounds[j])) {
+                        graph.addEdge(
+                                v1,
+                                new Graph.Vertex(j+1, v2),
+                                c[(i-1)*t+k]
+                        );
+                    }
+                }
+            }
+        }
+        return graph;
     }
 
 
-    private static boolean isFeasible(int[][] matrix, int[] rhs, int[] tFull, int r, int h) {
+    public static boolean isFeasible(int[][] matrix, int[] rhs, int[]c, int[] tFull, int r, int h) {
 
         // Variables relevant to the algorithm
         int t = tFull[0];
@@ -92,6 +207,7 @@ public class Steinitz {
         int delta = findLargestAbsValue(matrix, r, h);
         System.out.println("rhs:");
         System.out.println(Arrays.toString(rhs));
+        System.out.printf("Value of t: %d%n", t);
         System.out.printf("Value of n: %d%n", n);
         System.out.printf("Value of r: %d%n", r);
         System.out.printf("Value of q: %d%n", q);
@@ -114,12 +230,14 @@ public class Steinitz {
         System.out.println(Arrays.toString(mSigma));
 
         System.out.println("Construction1 starts here: ");
-        construction1(matrix, rhs, mSigma, r, n, delta);
-
+        // Builds the graph used for BFS
+        Graph graph = construction1(matrix, rhs, c, mSigma, r, n, t, delta);
+        Graph.Vertex start = new Graph.Vertex(0, new int[r]);
+        Graph.Vertex end = new Graph.Vertex(q, Arrays.copyOf(rhs, r));
+        boolean result = graph.layeredBFS(start, end);
         // Separator print
         System.out.println(" ");
-
-        return false;
+        return result;
     }
 
     public static void main(String[] args) throws IOException {
@@ -133,14 +251,24 @@ public class Steinitz {
             int[][] matrix = i.getMatrix();
             int[] rhs = i.getRhs();
             int[] tFull = i.getT();
+            int[] c = i.getC();
             int r = i.getR();
             int h = i.getH();
-            boolean result = isFeasible(matrix, rhs, tFull, r, h);
-            // System.out.printf("ILP instance %d is feasible: %b%n", count, result);
-            break;
+            boolean result = isFeasible(matrix, rhs, c, tFull, r, h);
+            System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
         // System.out.printf("Time elapsed: %d%n", timeElapsed);
     }
 }
+
+    /*
+    private final int[] b0;
+    private final int q;
+
+    public Graph(int[] b0, int q) {
+        this.b0 = b0;
+        this.q = q;
+    }
+     */
