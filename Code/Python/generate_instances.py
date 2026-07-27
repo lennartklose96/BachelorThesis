@@ -4,10 +4,10 @@ import random
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
-A_INT_MAX = 2
+A_INT_MAX = 3
 # Integer minimum and maximum size per entry in RHS
-B_INT_MIN = 2
-B_INT_MAX = 5
+B_INT_MIN = 1
+B_INT_MAX = 3
 # Minimum and maximum size of each block
 BLOCKSIZE_MIN = 2
 BLOCKSIZE_MAX = 5

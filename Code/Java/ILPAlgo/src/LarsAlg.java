@@ -96,6 +96,10 @@ public class LarsAlg {
         int idx = 0;
         int mul = 1;
         for (int x : v) {
+            if (x >= base || x < 0)
+                throw new RuntimeException("encoding overflow");
+        }
+        for (int x : v) {
             int add = x * mul;
             idx += add;
             mul *= base;
@@ -176,7 +180,7 @@ public class LarsAlg {
         // System.out.printf("Iterations: %d%n", l);
 
         // The maximum amount of vectors we can check
-        int base = maxEntry(rhs)+1;
+        int base = Math.max(delta,maxEntry(rhs))+1;
         // System.out.printf("Base is %d%n", base);
         // Maximum vector size that can be reached
         int maxSize = 1;

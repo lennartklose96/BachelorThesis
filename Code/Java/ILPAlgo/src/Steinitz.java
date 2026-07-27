@@ -1,12 +1,30 @@
-import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Steinitz {
 
+    // TODO: Remove
+    // Testing matrix multiplication
+    public static int[] multiply(int[][] A, int[] x) {
+
+        int m = A.length;
+        int n = x.length;
+
+        int[] result = new int[m];
+
+        for (int i = 0; i < m; i++) {
+            int sum = 0;
+
+            for (int j = 0; j < n; j++) {
+                sum += A[i][j] * x[j];
+            }
+
+            result[i] = sum;
+        }
+
+        return result;
+    }
 
     ///////////////////////////////
     /// Generic helper function ///
@@ -22,7 +40,7 @@ public class Steinitz {
     }
 
     // Increments a vector given the lower and upper bounds on each index
-    public static boolean incBoundedVector(int[] v, int[] lowerBounds, int[] upperBounds) {
+    public static void incBoundedVector(int[] v, int[] lowerBounds, int[] upperBounds) {
         // Increment at the back.
         int i = v.length - 1;
         boolean incremented = false;
@@ -36,7 +54,6 @@ public class Steinitz {
                 i--;
             }
         }
-        return incremented;
     }
 
     // Returns if a vector is in the given bounds given for each index
@@ -172,8 +189,6 @@ public class Steinitz {
         int[] vCol;
         int[] v2;
         for (int j = 0; j < q; j++) {
-            // TODO: REMOVE PRINT
-            // System.out.println(j);
             // Finding out the block index we need to look in
             i = mSigma[j];
             colVectors = getBlockColumns(matrix, i-1, r, t);
@@ -188,6 +203,7 @@ public class Steinitz {
                         graph.addEdge(
                                 v1,
                                 new Graph.Vertex(j+1, v2),
+                                (i - 1) * t + k,
                                 c[(i-1)*t+k]
                         );
                     }
@@ -199,12 +215,15 @@ public class Steinitz {
 
 
     public static boolean isFeasible(int[][] matrix, int[] rhs, int[]c, int[] tFull, int r, int h) {
-
         // Variables relevant to the algorithm
         int t = tFull[0];
         int n = tFull.length;
         int q = calculateQ(rhs, r);
         int delta = findLargestAbsValue(matrix, r, h);
+        System.out.println("Matrix:");
+        for (int[] x : matrix) {
+            System.out.println(Arrays.toString(x));
+        }
         System.out.println("rhs:");
         System.out.println(Arrays.toString(rhs));
         System.out.printf("Value of t: %d%n", t);
@@ -229,15 +248,32 @@ public class Steinitz {
         System.out.println("Reordered MSigma:");
         System.out.println(Arrays.toString(mSigma));
 
-        System.out.println("Construction1 starts here: ");
         // Builds the graph used for BFS
         Graph graph = construction1(matrix, rhs, c, mSigma, r, n, t, delta);
         Graph.Vertex start = new Graph.Vertex(0, new int[r]);
-        Graph.Vertex end = new Graph.Vertex(q, Arrays.copyOf(rhs, r));
-        boolean result = graph.layeredBFS(start, end);
-        // Separator print
+        Graph.Vertex target = new Graph.Vertex(q, Arrays.copyOf(rhs, r));
+        List<Graph.Edge> path = graph.layeredBFS(start, target);
+        System.out.println("Construction1 starts here: ");
+        // Check feasibility
+        boolean feasible;
+        // Building the result
+        int[] x = new int[n * t];
+        int cost = 0;
+        if (path == null) {
+            feasible = false;
+        } else {
+            feasible = true;
+            for (Graph.Edge e : path) {
+                x[e.variableIndex()]++;
+                cost += e.weight();
+            }
+        }
+        // Result
+        if (feasible) {
+            System.out.println(Arrays.toString(multiply(matrix, x)));
+        }
         System.out.println(" ");
-        return result;
+        return feasible;
     }
 
     public static void main(String[] args) throws IOException {
@@ -259,16 +295,6 @@ public class Steinitz {
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
-        // System.out.printf("Time elapsed: %d%n", timeElapsed);
+        System.out.printf("Time elapsed: %d%n", timeElapsed);
     }
 }
-
-    /*
-    private final int[] b0;
-    private final int q;
-
-    public Graph(int[] b0, int q) {
-        this.b0 = b0;
-        this.q = q;
-    }
-     */

@@ -75,7 +75,7 @@ public class LarsAlgVectors {
     /// FEASIBILITY CHECKER ///
     /// ////////////////////////
 
-    public static boolean isFeasible(int[][] A, int[] rhs, int[] t, int r, int h) {
+    public static boolean isFeasible(int[][] A, int[] rhs, int r, int h) {
         // Largest value in matrix
         int delta = findLargestAbsValue(A);
         // Upper bound for the hereditary discrepancy
@@ -162,7 +162,7 @@ public class LarsAlgVectors {
             int r = i.getR();
             int h = i.getH();
             // Get the result
-            boolean result = isFeasible(matrix, rhs, t, r, h);
+            boolean result = isFeasible(matrix, rhs, r, h);
             System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
         long finish = System.currentTimeMillis();

@@ -4,15 +4,15 @@ import random
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
-A_INT_MAX = 3
+A_INT_MAX = 2
 # Integer minimum and maximum size per entry in RHS
-B_INT_MIN = 2
-B_INT_MAX = 5
+B_INT_MIN = 1
+B_INT_MAX = 3
 # Minimum and maximum size of each block
 BLOCKSIZE = 3
 # Objective function limits
-C_MIN = 0
-C_MAX = 0
+C_MIN = -5
+C_MAX = 5
 
 # Writing output_file
 with open("Datasets/dataset_stein.txt", "w") as file:
@@ -89,7 +89,7 @@ with open("Datasets/dataset_stein.txt", "w") as file:
         ####################
         x_blocks = []
         for i in range(n):
-            x_i = [random.randint(0, 2) for _ in range(t[i])]
+            x_i = [random.randint(0, 5) for _ in range(t[i])]
             x_blocks.append(x_i)
 
         ####################
