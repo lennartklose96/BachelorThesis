@@ -4,7 +4,7 @@ import random
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
-A_INT_MAX = 3
+A_INT_MAX = 5
 # Integer minimum and maximum size per entry in RHS
 B_INT_MIN = 1
 B_INT_MAX = 3

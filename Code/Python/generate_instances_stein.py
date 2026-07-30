@@ -4,15 +4,15 @@ import random
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
-A_INT_MAX = 2
+A_INT_MAX = 5
 # Integer minimum and maximum size per entry in RHS
 B_INT_MIN = 1
 B_INT_MAX = 3
 # Minimum and maximum size of each block
 BLOCKSIZE = 3
 # Objective function limits
-C_MIN = -5
-C_MAX = 5
+C_MIN = 5
+C_MAX = 10
 
 # Writing output_file
 with open("Datasets/dataset_stein.txt", "w") as file:

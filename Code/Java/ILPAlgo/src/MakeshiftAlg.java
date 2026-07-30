@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 // Helper class used to sort the breakpoints later
 class Breakpoint {
@@ -29,6 +30,27 @@ class Breakpoint {
 }
 
 public class MakeshiftAlg {
+
+    // Testing matrix multiplication
+    public static int[] multiply(int[][] A, int[] x) {
+
+        int m = A.length;
+        int n = x.length;
+
+        int[] result = new int[m];
+
+        for (int i = 0; i < m; i++) {
+            int sum = 0;
+
+            for (int j = 0; j < n; j++) {
+                sum += A[i][j] * x[j];
+            }
+
+            result[i] = sum;
+        }
+
+        return result;
+    }
 
     // Find the largest absolute value in a matrix
     private static int findLargestAbsValue(int[][] matrix) {
@@ -164,7 +186,7 @@ public class MakeshiftAlg {
                 bPrime = vPrime.v();
                 for (int i = start; i <= end; i++) {
                     // Add Vertex and Edge if they Vertex is in bounds
-                    if (isInBounds(AT[i], bPrime, b, d, bound)) {
+                    if (isInBounds(AT[i], bPrime, b, dk, bound)) {
                         bDoublePrime = add(AT[i], bPrime);
                         vDoublePrime = new Graph.Vertex(k + 1, bDoublePrime);
                         graph.addVertex(vDoublePrime);
@@ -173,22 +195,27 @@ public class MakeshiftAlg {
                 }
             }
         }
+
         // Checking feasibility
         for (Graph.Vertex v : graph.getLayer(t)) {
             if (Arrays.equals(v.v(), b)) {
+                Graph.Vertex pathStart = graph.getLayer(0).get(0);
+                Graph.LongestPathResult result = graph.longestPath(pathStart, v, c.length);
+                int[] xResult = result.x();
+                int[] costResult = result.cost();
+                int[] mult = multiply(matrix, xResult);
+                System.out.println(Arrays.toString(mult));
+                System.out.println(Arrays.toString(rhs));
                 return true;
             }
         }
-
-        // TODO: Add Dijkstra for optimal solution
-
         return false;
     }
 
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_stein.txt");
         // Read instances
         int count = 0;
         for (ILPInstance i : inputs) {

@@ -271,6 +271,7 @@ public class Steinitz {
         // Result
         if (feasible) {
             System.out.println(Arrays.toString(multiply(matrix, x)));
+            System.out.printf("Cost: %d%n", cost);
         }
         System.out.println(" ");
         return feasible;

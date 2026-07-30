@@ -6,7 +6,7 @@ import com.gurobi.gurobi.*;
 public class Main {
     public static void main(String[] args) throws IOException, GRBException {
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_stein.txt");
         int count = 0;
         boolean allPassed = true;
         int failCount = 0;

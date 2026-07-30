@@ -131,6 +131,102 @@ public class Graph {
         return path;
     }
 
+    ///////////////////////////
+    /// LONGEST PATH IN DAG ///
+    ///////////////////////////
+
+    public record LongestPathResult(int[] x, int[] cost) {}
+
+    public LongestPathResult longestPath(Vertex start, Vertex target, int numberOfVariables) {
+        start = canonical.get(start);
+        target = canonical.get(target);
+
+        if (start == null || target == null) {
+            return null;
+        }
+
+        // Maximum distance (objective value) to each vertex
+        Map<Vertex, Integer> distance = new HashMap<>();
+
+        // The edge used to reach each vertex optimally
+        Map<Vertex, Edge> parentEdge = new HashMap<>();
+
+        // Distance from start to itself is 0
+        distance.put(start, 0);
+
+        // Process layers in topological order
+        for (int layer = start.j(); layer <= target.j(); layer++) {
+
+            for (Vertex current : getLayer(layer)) {
+
+                Integer currentDistance = distance.get(current);
+
+                // Vertex is not reachable from start
+                if (currentDistance == null) {
+                    continue;
+                }
+
+                for (Edge edge : getOutgoing(current)) {
+
+                    Vertex next = edge.to();
+
+                    int newDistance =
+                            currentDistance + edge.weight();
+
+                    // If this is the first way to reach next,
+                    // or this path is better than the previous one
+                    if (!distance.containsKey(next)
+                            || newDistance > distance.get(next)) {
+
+                        distance.put(next, newDistance);
+                        parentEdge.put(next, edge);
+                    }
+                }
+            }
+        }
+
+        // Target is unreachable
+        if (!distance.containsKey(target)) {
+            return null;
+        }
+
+        // Reconstruct the optimal path
+        List<Edge> path = new ArrayList<>();
+
+        Vertex current = target;
+
+        while (!current.equals(start)) {
+            Edge edge = parentEdge.get(current);
+
+            if (edge == null) {
+                return null;
+            }
+
+            path.add(edge);
+            current = edge.from();
+        }
+
+        Collections.reverse(path);
+
+        // Construct x
+        int[] x = new int[numberOfVariables];
+
+        // Construct costs
+        int[] cost = new int[path.size()];
+
+        for (int i = 0; i < path.size(); i++) {
+            Edge edge = path.get(i);
+
+            // The edge corresponds to incrementing x_i
+            x[edge.variableIndex()]++;
+
+            // Store the cost of this selected edge
+            cost[i] = edge.weight();
+        }
+
+        return new LongestPathResult(x, cost);
+    }
+
 
     /////////////////////
     /// DEBUG HELPERS ///
