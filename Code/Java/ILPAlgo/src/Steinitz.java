@@ -220,17 +220,6 @@ public class Steinitz {
         int n = tFull.length;
         int q = calculateQ(rhs, r);
         int delta = findLargestAbsValue(matrix, r, h);
-        System.out.println("Matrix:");
-        for (int[] x : matrix) {
-            System.out.println(Arrays.toString(x));
-        }
-        System.out.println("rhs:");
-        System.out.println(Arrays.toString(rhs));
-        System.out.printf("Value of t: %d%n", t);
-        System.out.printf("Value of n: %d%n", n);
-        System.out.printf("Value of r: %d%n", r);
-        System.out.printf("Value of q: %d%n", q);
-        System.out.printf("Value of delta: %d%n", delta);
 
         // Initialize the permutation of M
         int[] mSigma = new int[q];
@@ -240,20 +229,15 @@ public class Steinitz {
                 mSigma[idx++] = i+1;
             }
         }
-        System.out.println("Initial MSigma:");
-        System.out.println(Arrays.toString(mSigma));
 
         int[] bLower = Arrays.copyOfRange(rhs, r, rhs.length);
         mSigma = algorithm1(bLower, n, q);
-        System.out.println("Reordered MSigma:");
-        System.out.println(Arrays.toString(mSigma));
 
         // Builds the graph used for BFS
         Graph graph = construction1(matrix, rhs, c, mSigma, r, n, t, delta);
         Graph.Vertex start = new Graph.Vertex(0, new int[r]);
         Graph.Vertex target = new Graph.Vertex(q, Arrays.copyOf(rhs, r));
         List<Graph.Edge> path = graph.layeredBFS(start, target);
-        System.out.println("Construction1 starts here: ");
         // Check feasibility
         boolean feasible;
         // Building the result
@@ -268,20 +252,14 @@ public class Steinitz {
                 cost += e.weight();
             }
         }
-        // Result
-        if (feasible) {
-            System.out.println(Arrays.toString(multiply(matrix, x)));
-            System.out.printf("Cost: %d%n", cost);
-        }
-        System.out.println(" ");
         return feasible;
     }
 
     public static void main(String[] args) throws IOException {
-
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_stein.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        System.out.printf("Parameters: \n" + Arrays.toString(inputs[0].getParams()) + "\n");
         int count = 0;
         for (ILPInstance i : inputs) {
             count++;

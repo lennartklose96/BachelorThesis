@@ -135,13 +135,6 @@ public class LarsAlgVectors {
                 }
             }
             prev = next;
-            /*
-            System.out.println("NEXT ITERATION");
-            for (VectorKey key : prev) {
-                System.out.println(Arrays.toString(key.getVector()));
-
-            }
-             */
         }
         VectorKey rhsVKey = new VectorKey(rhs);
         return prev.contains(rhsVKey);

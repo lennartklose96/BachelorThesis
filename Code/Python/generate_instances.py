@@ -4,7 +4,7 @@ import random
 INSTANCES = 100
 # Integer minimum and maximum size per entry in matrix
 A_INT_MIN = 0
-A_INT_MAX = 5
+A_INT_MAX = 3
 # Integer minimum and maximum size per entry in RHS
 B_INT_MIN = 1
 B_INT_MAX = 3
@@ -17,6 +17,12 @@ C_MAX = 10
 
 # Writing output_file
 with open("Datasets/dataset_test.txt", "w") as file:
+    # Parameters for generating the instances
+    n = 5
+    r = 1
+
+     # Writing the relevant function parameters
+    file.write(f"{A_INT_MAX} {B_INT_MAX} {BLOCKSIZE_MAX} {n} {r}\n")
     # Number of instances on the top of the file
     file.write(f"{INSTANCES}\n")
 
@@ -24,9 +30,6 @@ with open("Datasets/dataset_test.txt", "w") as file:
     ### GENERATING THE INPUTS ###
     #############################
 
-    # Parameters for generating the instances
-    n = 4
-    r = 1
     # Generate matrices
     for instance_num in range(INSTANCES):
         # Generate the sizes of the blocks contained in t
@@ -92,7 +95,7 @@ with open("Datasets/dataset_test.txt", "w") as file:
         ####################
         x_blocks = []
         for i in range(n):
-            x_i = [random.randint(0, 2) for _ in range(t[i])]
+            x_i = [random.randint(0, 1) for _ in range(t[i])]
             x_blocks.append(x_i)
 
         ####################

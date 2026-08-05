@@ -160,7 +160,7 @@ public class MakeshiftAlg {
         graph.addVertex(new Graph.Vertex(0, new int[d]));
         // Building the graph with vertices and edges
         // Index off by one compared to the paper regarding V_
-        // Declaring lot of reusable variables
+        // Declaring variables to be reused in runtime
         double dk;
         int blockIndex;
         int start;
@@ -199,6 +199,8 @@ public class MakeshiftAlg {
         // Checking feasibility
         for (Graph.Vertex v : graph.getLayer(t)) {
             if (Arrays.equals(v.v(), b)) {
+                // For getting the best objective value
+                /*
                 Graph.Vertex pathStart = graph.getLayer(0).get(0);
                 Graph.LongestPathResult result = graph.longestPath(pathStart, v, c.length);
                 int[] xResult = result.x();
@@ -206,6 +208,7 @@ public class MakeshiftAlg {
                 int[] mult = multiply(matrix, xResult);
                 System.out.println(Arrays.toString(mult));
                 System.out.println(Arrays.toString(rhs));
+                 */
                 return true;
             }
         }
@@ -215,7 +218,8 @@ public class MakeshiftAlg {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_stein.txt");
+        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        System.out.printf("Parameters: \n" + Arrays.toString(inputs[0].getParams()) + "\n");
         // Read instances
         int count = 0;
         for (ILPInstance i : inputs) {

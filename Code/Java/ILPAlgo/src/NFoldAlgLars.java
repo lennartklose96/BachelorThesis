@@ -220,7 +220,6 @@ public class NFoldAlgLars {
             }
         }
 
-
         // Building base table (BT) and dynamic table (DT) for iteration k = 2 ... n
         // Majority of the computation happening here.
         for (int k = 1; k < n; k++) {
@@ -312,11 +311,6 @@ public class NFoldAlgLars {
             startIndex += t[k];
         }
 
-        // TODO: REMOVE LATER
-        // Helper prints
-        // System.out.println("Value of K: " + Integer.toString(K));
-        // System.out.println("Iteration amount: " + Integer.toString(iterations));
-
         /// MAIN ALGORITHM
         List<int[]> NCurr = new ArrayList<>();
         List<int[]> NPrev;
@@ -386,6 +380,7 @@ public class NFoldAlgLars {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        System.out.printf("Parameters: \n" + Arrays.toString(inputs[0].getParams()) + "\n");
         int count = 0;
         for (ILPInstance i : inputs) {
             count++;

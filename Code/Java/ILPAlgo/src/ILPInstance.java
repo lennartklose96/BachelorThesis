@@ -8,9 +8,11 @@ public class ILPInstance {
     private int[] c;
     private int[] rhs;
     private int[][] matrix;
+    private int[] params;
 
     // Constructor
-    public ILPInstance(int n, int r, int h, int[] t, int[] c, int[] rhs, int[][] matrix) {
+    public ILPInstance(int[] params, int n, int r, int h, int[] t, int[] c, int[] rhs, int[][] matrix) {
+        this.params = params;
         this.n = n;
         this.r = r;
         this.h = h;
@@ -21,6 +23,10 @@ public class ILPInstance {
     }
 
     // Getters and setters
+    public int[] getParams() {
+        return params;
+    }
+
     public int getN() {
         return n;
     }

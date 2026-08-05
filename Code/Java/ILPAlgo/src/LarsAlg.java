@@ -188,7 +188,7 @@ public class LarsAlg {
             maxSize *= base;
             if (maxSize < 0) throw new ArithmeticException("overflow in encoding");
         }
-        // System.out.printf("Maximum entry is %d%n", maxSize);
+        // System.out.println("TEST");
 
         // Columns decoded to a number of base 8H+1
         int[][] cols = new int[A[0].length][A.length];
@@ -251,6 +251,7 @@ public class LarsAlg {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        System.out.printf("Parameters: \n" + Arrays.toString(inputs[0].getParams()) + "\n");
         // Read instances
         int count = 0;
         for (ILPInstance i : inputs) {

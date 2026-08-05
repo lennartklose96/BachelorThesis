@@ -5,11 +5,20 @@ public class InstanceParser {
     public ILPInstance[] parseFile(String filePath) throws IOException {
         // Reading the file
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            // Parsing the parameters responsible for generating the instance
+            String inputParameters = br.readLine();
+            String[] parameters = inputParameters.split("\\s+");
+            int[] paramValues = new int[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                paramValues[i] = Integer.parseInt(parameters[i]);
+            }
             // Number of instances to generate
             int instances = Integer.parseInt(br.readLine());
             ILPInstance[] result = new ILPInstance[instances];
             // Generating all instances
             for (int i = 0; i < instances; i++) {
+
+
                 // Parsing input value data
                 String inputValues = br.readLine();
                 String[] values = inputValues.split("\\s+");
@@ -37,7 +46,7 @@ public class InstanceParser {
                     }
                 }
                 // Creating and adding the instance
-                ILPInstance ilp = new ILPInstance(n, r, h, t, c, rhs, matrix);
+                ILPInstance ilp = new ILPInstance(paramValues, n, r, h, t, c, rhs, matrix);
                 result[i] = ilp;
                 // Reading empty line that separates the instances
                 br.readLine();
