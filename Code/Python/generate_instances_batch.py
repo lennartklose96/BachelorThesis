@@ -1,3 +1,4 @@
+import os
 import random
 from itertools import product
 
@@ -157,10 +158,10 @@ def generate_dataset(
 
 def generate_cluster_inputs():
     # Input paremeter ranges to test
-    a_ranges = [(1, 10, 1), (20, 100, 20), (200, 1000, 200)]
-    b_ranges = [(1, 10, 1), (20, 100, 20), (200, 1000, 200)]
-    block_ranges = [(1, 10, 1)]
-    r_ranges = [(1, 10, 1), (20, 100, 10)]
+    a_ranges = [(1, 10, 1), (20, 100, 20), (500, 1000, 500)]
+    b_ranges = [(1, 10, 1), (20, 100, 20), (500, 1000, 500)]
+    block_ranges = [(2, 10, 2)]
+    r_ranges = [(1, 10, 1)]
     # Turns the range values into a list
     def generate_range(ranges):
         values = []
@@ -188,15 +189,17 @@ def generate_cluster_inputs():
         # Impossible dataset, ignore this usecase
         possible_columns = (a_max + 1) ** r
         if possible_columns >= block_size:
-            filename = (
-                f"Inputs/"
+            # Find the correct folder to process
+            r_folder = f"Inputs/R{r}"
+
+            os.makedirs(r_folder, exist_ok=True)
+            filename = os.path.join(
+                r_folder,
                 f"A{a_max}_B{b_max}_Block{block_size}_R{r}.txt"
             )
             generate_dataset(filename, 10, a_max, b_max, c_max, block_size, block_size, r)
             print(f"Generated {dataset_id} dataset")
 
-
-    
 
 
 
@@ -213,7 +216,7 @@ a_int_max = 3
 b_int_max = 3
 # Minimum and maximum size of each block
 blocksize = 3
-blocknum = 10
+blocknum = 3
 # Objective function limits
 c_max = 9
 # Amount of rows in the upper matrix
@@ -221,4 +224,4 @@ r = 1
 generate_dataset("Datasets/dataset_test.txt", INSTANCES, a_int_max,
                 b_int_max,  c_max, blocksize, blocknum, r)
 
-# generate_cluster_inputs()
+generate_cluster_inputs()

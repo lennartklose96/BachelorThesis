@@ -29,37 +29,6 @@ public class LarsAlg {
         return largest;
     }
 
-    // Checks if a given encoded vector is smaller than the other one
-    private static boolean isSmallerComponentWise(int v, int[] target, int base) {
-        boolean smaller = true;
-        int i = 0;
-        int tmp = v;
-        int component;
-        while (smaller && i < target.length) {
-            // Decode next component
-            component = tmp % base;
-            tmp /= base;
-            if (component > target[i]) {
-                smaller = false;
-            }
-            i++;
-        }
-        return smaller;
-    }
-
-    // Checks if a given vector is smaller than the other one
-    private static boolean isSmallerComponentWise(int[] v, int[] target) {
-        boolean smaller = true;
-        int i = 0;
-        while (smaller && i < v.length) {
-            if (v[i] > target[i]) {
-                smaller = false;
-            }
-            i++;
-        }
-        return smaller;
-    }
-
     // Calculates the bound and mutates the out vector
     private static void calculateBound(int[] b, double[] out, int i, int l) {
         double scale = Math.pow(2.0, i - l);
@@ -134,29 +103,6 @@ public class LarsAlg {
         return carry;
     }
 
-    ////////////////////////////////
-    /// MAIN VECTOR CALCULATIONS ///
-    ////////////////////////////////
-
-    private static boolean isInBounds(int encodedBPrime, int[] b, int i, int l, int herDisc, int base) {
-        double scale = Math.scalb(1.0, i - l);
-        double limit = 4.0 * herDisc;
-        long tmp = encodedBPrime;
-        for (int x : b) {
-            int bPrimeX = (int) (tmp % base);
-            tmp /= base;
-            double target = x * scale;
-
-            if (bPrimeX < target - limit ||
-                    bPrimeX > target + limit) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
-
     ///////////////////////////
     /// FEASIBILITY CHECKER ///
     ///////////////////////////
@@ -188,7 +134,6 @@ public class LarsAlg {
             maxSize *= base;
             if (maxSize < 0) throw new ArithmeticException("overflow in encoding");
         }
-        // System.out.println("TEST");
 
         // Columns decoded to a number of base 8H+1
         int[][] cols = new int[A[0].length][A.length];
@@ -197,7 +142,6 @@ public class LarsAlg {
                 cols[j][i] = A[i][j];
             }
         }
-
         // Bulk computation
         BitSet prev = new BitSet();
         prev.set(0);
@@ -217,7 +161,6 @@ public class LarsAlg {
             BitSet next = new BitSet();
             calculateBound(rhs, bound, i, l);
             // Iterate over all combinations of vectors
-            // TODO: Implement FFT
             for (int a = prev.nextSetBit(0);
                 a >= 0;
                 a = prev.nextSetBit(a + 1)) {
@@ -232,12 +175,6 @@ public class LarsAlg {
                     }
                 }
             }
-            // TODO: see if this can be optimized
-            /*
-            if (prev.equals(next)) {
-                System.out.println("WASTED ITERATION");
-            }
-            */
             // Early return
             if (prev.get(rhsEncoded)) {
                 return true;
@@ -250,7 +187,13 @@ public class LarsAlg {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        if (args.length == 0) {
+            System.err.println("No input file provided");
+            System.exit(1);
+        }
+        String inputFile = args[0];
+        ILPInstance[] inputs = p.parseFile(inputFile);
+        System.out.println("Lars1");
         System.out.printf("Parameters: \n" + Arrays.toString(inputs[0].getParams()) + "\n");
         // Read instances
         int count = 0;
@@ -258,13 +201,11 @@ public class LarsAlg {
             count++;
             int[][] matrix = i.getMatrix();
             int[] rhs = i.getRhs();
-            int[] t = i.getT();
-            int[] c = i.getC();
             int r = i.getR();
             int h = i.getH();
             // Get the result
             boolean result = isFeasible(matrix, rhs, r, h);
-            System.out.printf("ILP instance %d is feasible: %b%n", count, result);
+            // System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;

@@ -119,10 +119,6 @@ public class MakeshiftAlg {
             startIdx += blockSizes[i];
         }
 
-        // System.out.printf("t: %d\n", t);
-        // System.out.println(Arrays.toString(tAmount));
-        // System.out.println(Arrays.toString(blockStartIndices));
-
         // Initialize array of breakpoints
         Breakpoint[] breakpoints = new Breakpoint[t];
         int tPtr = 0;
@@ -218,7 +214,13 @@ public class MakeshiftAlg {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        if (args.length == 0) {
+            System.err.println("No input file provided");
+            System.exit(1);
+        }
+        String inputFile = args[0];
+        ILPInstance[] inputs = p.parseFile(inputFile);
+        System.out.println("Lars2");
         System.out.printf("Parameters: \n" + Arrays.toString(inputs[0].getParams()) + "\n");
         // Read instances
         int count = 0;
@@ -232,7 +234,7 @@ public class MakeshiftAlg {
             int n = i.getH();
             // Get the result
             boolean result = isFeasible(matrix, rhs, d, n, c, t);
-            System.out.printf("ILP instance %d is feasible: %b%n", count, result);
+            // System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;

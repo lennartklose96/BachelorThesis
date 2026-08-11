@@ -258,7 +258,13 @@ public class Steinitz {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();
-        ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
+        if (args.length == 0) {
+            System.err.println("No input file provided");
+            System.exit(1);
+        }
+        String inputFile = args[0];
+        ILPInstance[] inputs = p.parseFile(inputFile);
+        System.out.println("Gupta");
         System.out.printf("Parameters: \n" + Arrays.toString(inputs[0].getParams()) + "\n");
         int count = 0;
         for (ILPInstance i : inputs) {
@@ -270,7 +276,7 @@ public class Steinitz {
             int r = i.getR();
             int h = i.getH();
             boolean result = isFeasible(matrix, rhs, c, tFull, r, h);
-            System.out.printf("ILP instance %d is feasible: %b%n", count, result);
+            // System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
