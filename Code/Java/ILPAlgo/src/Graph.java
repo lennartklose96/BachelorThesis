@@ -2,9 +2,12 @@ import java.util.*;
 
 public class Graph {
 
-    // Storage
+    // Adjacency list
     private final Map<Vertex, Set<Edge>> adjacency = new HashMap<>();
+    // Layers of the graph
     private final Map<Integer, List<Vertex>> layers = new HashMap<>();
+    // Canonicalization of vectors
+    // This is to ensure duplicate vectors refer to the same object
     private final Map<Vertex, Vertex> canonical = new HashMap<>();
 
 
@@ -12,6 +15,7 @@ public class Graph {
     /// CANONICALIZATION ///
     ////////////////////////
 
+    // Returning the same
     public Vertex getOrCreate(Vertex v) {
         return canonical.computeIfAbsent(v, k -> {
             adjacency.putIfAbsent(k, new HashSet<>());
@@ -25,11 +29,12 @@ public class Graph {
     /// VERTEX AND EDGE ADDITION ///
     ////////////////////////////////
 
+    // Adding a vertex to the graph
     public void addVertex(Vertex v) {
         getOrCreate(v);
     }
 
-
+    // Adding an edge to the graph
     public void addEdge(Vertex from, Vertex to, int variableIndex, int weight) {
         from = getOrCreate(from);
         to = getOrCreate(to);
@@ -37,14 +42,12 @@ public class Graph {
         adjacency.get(from).add(new Edge(from, to, variableIndex, weight));
     }
 
-
+    // Return all outgoing edges for a vertex v
     public Collection<Edge> getOutgoing(Vertex v) {
         Vertex canonicalVertex = canonical.get(v);
-
         if (canonicalVertex == null) {
             return Collections.emptySet();
         }
-
         return adjacency.get(canonicalVertex);
     }
 
@@ -53,13 +56,16 @@ public class Graph {
     /// LAYERS ///
     //////////////
 
+    // Returns layer j
     public List<Vertex> getLayer(int j) {
         return layers.getOrDefault(j, Collections.emptyList());
     }
-    public List<int[]> getVectorsInLayer(int layer) {
+
+    // Returns all vectors in layer j
+    public List<int[]> getVectorsInLayer(int j) {
         List<int[]> vectors = new ArrayList<>();
 
-        for (Vertex vertex : getLayer(layer)) {
+        for (Vertex vertex : getLayer(j)) {
             vectors.add(vertex.v());
         }
 
@@ -83,7 +89,7 @@ public class Graph {
         Set<Vertex> visited = new HashSet<>();
         Queue<Vertex> queue = new ArrayDeque<>();
 
-        // To reconstruct path
+        // To reconstruct the path
         Map<Vertex, Edge> parentEdge = new HashMap<>();
 
         queue.add(start);
@@ -108,7 +114,7 @@ public class Graph {
             }
         }
 
-        // If target was never reached
+        // Target was not reached
         if (!visited.contains(target)) {
             return null;
         }
@@ -120,8 +126,9 @@ public class Graph {
 
         while (!v.equals(start)) {
             Edge e = parentEdge.get(v);
+            // Safety check
             if (e == null) {
-                return null; // safety check
+                return null;
             }
             path.add(e);
             v = e.from();

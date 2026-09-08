@@ -36,6 +36,7 @@ public class DiscrepancyCalculator {
         int m = A.length;
         int n = A[0].length;
         int iterations = 1 << n;
+        System.out.println(iterations);
         // Helper variables
         int[] colPositions;
         int columnAmount;
@@ -69,10 +70,9 @@ public class DiscrepancyCalculator {
     // Example used for testing/debugging
     public static void main(String[] args) {
         int[][] A = {
-                {3, 2, 0, 2, 4, 2, 3},
-                {1, 1, 1, 0, 0, 0, 0},
-                {0, 0, 0, 1, 1, 0, 0},
-                {0, 0, 0, 0, 0, 1, 1}
+                {1, 1, 0, 0, 0, 1, 1},
+                {1, 0, 0, 0, 1, 1, 1},
+                {0, 0, 0, 1, 0, 1, 1}
         };
 
         System.out.println("discrepancy = " + discrepancy(A));

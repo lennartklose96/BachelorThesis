@@ -33,17 +33,6 @@ public class NFoldAlgLars {
         }
     }
 
-    // Scales the vector by the given shift to the power of 2
-    private static double[] scaleVector(int[] v, int shift) {
-        double[] result = new double[v.length];
-        double factor = Math.pow(2, shift);
-        for (int i = 0; i < v.length; i++) {
-            result[i] = v[i] / factor;
-        }
-        return result;
-    }
-
-
     // Check if a given vector is in a list
     private static boolean containsVector(List<int[]> set, int[] toFind) {
         boolean found = false;
@@ -82,7 +71,6 @@ public class NFoldAlgLars {
     // Determines the amount of iteration steps in the algorithm
     private static int determineIterationAmount(int K, int bDownMax) {
         // Edge case
-        // TODO: Investigate this one more
         if (bDownMax == 0) return 1;
         double value = ((double) bDownMax + K) / (2.0 * K + 1.0);
         double log = log2(value);
@@ -121,27 +109,16 @@ public class NFoldAlgLars {
     }
 
     // Derives all the small subproblems given every value of b_i(k), given i in I.
-    private static int[][] deriveSmallProblem(int[][] bDowns, int K) {
-        int[][] result = new int[bDowns.length][bDowns[0].length];
-        for (int i = 0; i < bDowns.length; i++) {
-            for (int k = 0; k < bDowns[0].length; k++) {
+    private static int[][] deriveSmallProblem(int[][] bLowers, int K) {
+        int[][] result = new int[bLowers.length][bLowers[0].length];
+        for (int i = 0; i < bLowers.length; i++) {
+            for (int k = 0; k < bLowers[0].length; k++) {
                 // Assigning correct small sub problem values
-                if (bDowns[i][k] <= K) {
-                    result[i][k] = bDowns[i][k];
+                if (bLowers[i][k] <= K) {
+                    result[i][k] = bLowers[i][k];
                 } else {
-                    result[i][k] = (bDowns[i][k] - K) % 2 == 0 ? K : K - 1;
+                    result[i][k] = (bLowers[i][k] - K) % 2 == 0 ? K : K - 1;
                 }
-            }
-        }
-        return result;
-    }
-
-    // Derives all the even subproblems given b_k and b~_k
-    private static int[][] deriveEvenProblem(int[][] bDowns, int[][] bSmalls) {
-        int[][] result = new int[bDowns.length][bDowns[0].length];
-        for (int i = 0; i < bDowns.length; i++) {
-            for (int k = 0; k < bDowns[0].length; k++) {
-                result[i][k] = bDowns[i][k] - bSmalls[i][k];
             }
         }
         return result;
@@ -175,7 +152,7 @@ public class NFoldAlgLars {
     The bulk of the computation occurs here.
     Returns N~(i).
      */
-    private static List<int[]> buildUpperSmallRHS(
+    private static List<int[]> buildSmallRHS(
             int[][][] ABricks,
             int[][] bLowerSmalls,
             int n, int K, int delta,
@@ -212,7 +189,7 @@ public class NFoldAlgLars {
             kVector[r] = bLowerSmalls[iteration][0];
             // Setting feasibility
 
-            if (LarsAlg.isFeasible(ABricks[0], kVector, r, h)) {
+            if (LarsAlg1.isFeasible(ABricks[0], kVector, r, h)) {
                 // Set vector as feasible
                 BT.set(v);
                 // Change encoding to D vector space
@@ -229,7 +206,7 @@ public class NFoldAlgLars {
                 // Encode and add bLowerSmall_k
                 decode(kVector, v, baseK, r);
                 kVector[r] = bLowerSmalls[iteration][k];
-                if (LarsAlg.isFeasible(ABricks[k], kVector, r, h)) {
+                if (LarsAlg1.isFeasible(ABricks[k], kVector, r, h)) {
                     // Set vector as feasible
                     BT.set(v);
                 }
@@ -316,7 +293,7 @@ public class NFoldAlgLars {
         List<int[]> NPrev;
         List<int[]> NSmall;
         // Build upper RHS (small problem)
-        NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, 0);
+        NSmall = buildSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, 0);
         // System.out.println("RHS FINISHED BUILDING");
         // Initialize N
         NPrev = new ArrayList<>(NSmall);
@@ -334,10 +311,9 @@ public class NFoldAlgLars {
             long bound = (long) D << shift;
             // Building the upper small RHS
             // WARNING: Computation expensive!
-            NSmall = buildUpperSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, i);
+            NSmall = buildSmallRHS(ABricks, bLowerSmalls, n, K, delta, r, h, i);
             // System.out.println("RHS FINISHED BUILDING");
             // Final part, checking all valid solutions
-            int count = NPrev.size() * NSmall.size();
             for (int[] bUpperPrev : NPrev) {
                 for (int[] bUpperSmall : NSmall) {
 
@@ -359,8 +335,6 @@ public class NFoldAlgLars {
                     if (valid && !containsVector(NCurr, candidate)) {
                         NCurr.add(Arrays.copyOf(candidate, r));
                     }
-                    count--;
-                    // System.out.println(count);
                 }
             }
             // Swap and free memory

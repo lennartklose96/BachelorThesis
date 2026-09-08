@@ -66,7 +66,7 @@ with open("Datasets/dataset_test.txt", "w") as file:
             A_blocks.append(block)
 
         # Width of the matrix
-        h = sum(t)
+        m = sum(t)
        
         # Upper part of the matrix, global constraints
         global_matrix = []
@@ -120,14 +120,14 @@ with open("Datasets/dataset_test.txt", "w") as file:
 
 
         # Objective function vector
-        c = [random.randint(C_MIN, C_MAX) for _ in range(h)]
+        c = [random.randint(C_MIN, C_MAX) for _ in range(m)]
 
         ####################################
         ### WRITING INSTANCE INFORMATION ###
         ####################################
 
         # Writing the input constraints
-        file.write(f"{n} {r} {h}\n")
+        file.write(f"{n} {r} {m}\n")
         # Writing t, c and rhs
         file.write(" ".join(map(str, t)) + "\n")
         file.write(" ".join(map(str, c)) + "\n")

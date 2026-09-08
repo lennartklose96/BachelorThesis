@@ -2,29 +2,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class Steinitz {
-
-    // TODO: Remove
-    // Testing matrix multiplication
-    public static int[] multiply(int[][] A, int[] x) {
-
-        int m = A.length;
-        int n = x.length;
-
-        int[] result = new int[m];
-
-        for (int i = 0; i < m; i++) {
-            int sum = 0;
-
-            for (int j = 0; j < n; j++) {
-                sum += A[i][j] * x[j];
-            }
-
-            result[i] = sum;
-        }
-
-        return result;
-    }
+public class GuptaAlg {
 
     ///////////////////////////////
     /// Generic helper function ///
@@ -117,7 +95,7 @@ public class Steinitz {
     //////////////////////////////////
 
     // Algorithm 1 from the paper
-    private static int[] algorithm1(int[] b, int n, int q) {
+    private static int[] algorithm1(int[] bLower, int n, int q) {
         int[] result = new int[q];
         int bestE;
         double bestImb;
@@ -128,7 +106,7 @@ public class Steinitz {
             for (int e = 1; e <= n; e++) {
                 int occE = occ(result, e, j-1);
                 // Calculate lowest imbalance value
-                double imb = occE - ((double) j/q) * b[e-1];
+                double imb = occE - ((double) j/q) * bLower[e-1];
                 if (imb < bestImb) {
                     bestImb = imb;
                     bestE = e;
@@ -219,21 +197,13 @@ public class Steinitz {
         int t = tFull[0];
         int n = tFull.length;
         int q = calculateQ(rhs, r);
+        int[] bLower = Arrays.copyOfRange(rhs, r, rhs.length);
         int delta = findLargestAbsValue(matrix, r, h);
 
-        // Initialize the permutation of M
-        int[] mSigma = new int[q];
-        int idx = 0;
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < rhs[i+r]; j++) {
-                mSigma[idx++] = i+1;
-            }
-        }
+        // Performing algorithm 1 from the paper for the optimal permutation
+        int[] mSigma = algorithm1(bLower, n, q);
 
-        int[] bLower = Arrays.copyOfRange(rhs, r, rhs.length);
-        mSigma = algorithm1(bLower, n, q);
-
-        // Builds the graph used for BFS
+        // Building the graph used for BFS
         Graph graph = construction1(matrix, rhs, c, mSigma, r, n, t, delta);
         Graph.Vertex start = new Graph.Vertex(0, new int[r]);
         Graph.Vertex target = new Graph.Vertex(q, Arrays.copyOf(rhs, r));

@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 
 // Helper class used to sort the breakpoints later
 class Breakpoint {
@@ -29,28 +28,7 @@ class Breakpoint {
     }
 }
 
-public class MakeshiftAlg {
-
-    // Testing matrix multiplication
-    public static int[] multiply(int[][] A, int[] x) {
-
-        int m = A.length;
-        int n = x.length;
-
-        int[] result = new int[m];
-
-        for (int i = 0; i < m; i++) {
-            int sum = 0;
-
-            for (int j = 0; j < n; j++) {
-                sum += A[i][j] * x[j];
-            }
-
-            result[i] = sum;
-        }
-
-        return result;
-    }
+class MakeshiftAlg {
 
     // Find the largest absolute value in a matrix
     private static int findLargestAbsValue(int[][] matrix) {
@@ -62,7 +40,6 @@ public class MakeshiftAlg {
         }
         return largest;
     }
-
     // Calculates if Ai + bPrime is in bounds
     // Also prunes partial solutions that already exceed the final RHS
     private static boolean isInBounds(int[] Ai, int[] bPrime, int[] b, double dk, int bound) {
@@ -93,14 +70,11 @@ public class MakeshiftAlg {
     public static boolean isFeasible(int[][] matrix, int[] rhs, int d, int n, int[] c, int[] blockSizes) {
         // Copying the upper part or the whole matrix => A
         int[][] A = new int[d][n];
-        // System.out.println("A: ");
         for (int i = 0; i < d; i++) {
             A[i] = Arrays.copyOf(matrix[i], matrix[i].length);
-            // System.out.println(Arrays.toString(A[i]));
         }
         // Copying the upper part of rhs => b
         int[] b = Arrays.copyOf(rhs, d);
-        // System.out.println("b: " + Arrays.toString(b));
 
         // Calculating the value for t (sum of lower rhs)
         int t = 0;
@@ -155,7 +129,6 @@ public class MakeshiftAlg {
         // Adding vertex at the first layer
         graph.addVertex(new Graph.Vertex(0, new int[d]));
         // Building the graph with vertices and edges
-        // Index off by one compared to the paper regarding V_
         // Declaring variables to be reused in runtime
         double dk;
         int blockIndex;
@@ -195,16 +168,16 @@ public class MakeshiftAlg {
         // Checking feasibility
         for (Graph.Vertex v : graph.getLayer(t)) {
             if (Arrays.equals(v.v(), b)) {
-                // For getting the best objective value
-                /*
-                Graph.Vertex pathStart = graph.getLayer(0).get(0);
-                Graph.LongestPathResult result = graph.longestPath(pathStart, v, c.length);
-                int[] xResult = result.x();
-                int[] costResult = result.cost();
-                int[] mult = multiply(matrix, xResult);
-                System.out.println(Arrays.toString(mult));
-                System.out.println(Arrays.toString(rhs));
-                 */
+                        // For g etting the best objective value
+                        /*
+                        Graph.Vertex pathStart = graph.getLayer(0).get(0);
+                        Graph.LongestPathResult result = graph.longestPath(pathStart, v, c.length);
+                        int[] xResult = result.x();
+                        int[] costResult = result.cost();
+                        int[] mult = multiply(matrix, xResult);
+                        System.out.println(Arrays.toString(mult));
+                        System.out.println(Arrays.toString(rhs));
+                         */
                 return true;
             }
         }

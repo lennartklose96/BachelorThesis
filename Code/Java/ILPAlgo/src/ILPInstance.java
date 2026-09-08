@@ -25,7 +25,7 @@ public class ILPInstance {
     // Getters and setters
     public int[] getParams() {
         return params;
-    }
+    } 
 
     public int getN() {
         return n;

@@ -6,7 +6,7 @@ from itertools import product
 def generate_unique_columns(a_int_max, r, blocksize):
 
     possible_columns = (a_int_max + 1) ** r
-    # Only enumerate when the space is small
+    # Only generate when the space is small
     if possible_columns <= 10000:
         all_columns = list(
             product(
@@ -106,19 +106,16 @@ def generate_dataset(
             matrix = global_matrix + local_matrix      
 
             ####################
-            ### Generating x ###
-            ####################
-            x_blocks = []
-            for i in range(n):
-                x_i = [random.randint(0, 5) for _ in range(t[i])]
-                x_blocks.append(x_i)
-
-            ####################
             ### Generating b ###
             ####################    
 
             # Guaranteed feasibility
             if random.random() < 0.5:
+                # Generating a random x to guarantee feasibility
+                x_blocks = []
+                for i in range(n):
+                    x_i = [random.randint(0, 5) for _ in range(t[i])]
+                    x_blocks.append(x_i)
                 rhs_down = [sum(x_blocks[i]) for i in range(n)]
                 rhs_up = []
                 for k in range(r):
@@ -202,8 +199,6 @@ def generate_cluster_inputs():
 
 
 
-
-
 #########################################
 ### Generate a random testing dataset ###
 #########################################
@@ -221,7 +216,7 @@ blocknum = 3
 c_max = 9
 # Amount of rows in the upper matrix
 r = 1
-generate_dataset("Datasets/dataset_test.txt", INSTANCES, a_int_max,
+generate_dataset("Datasets/dataset_test3.txt", INSTANCES, a_int_max,
                 b_int_max,  c_max, blocksize, blocknum, r)
 
-generate_cluster_inputs()
+# generate_cluster_inputs()

@@ -3,7 +3,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 
-public class LarsAlg {
+public class LarsAlg1 {
 
     /////////////////////////
     /// UTILITY FUNCTIONS ///
@@ -78,13 +78,6 @@ public class LarsAlg {
         return idx;
     }
 
-    // Decodes a base-'base' vector into a single integer
-    private static void decode(int value, int[] out, int base, int m) {
-        for (int i = 0; i < m; i++) {
-            out[i] = value % base;
-            value /= base;
-        }
-    }
 
     // Checks if with the addition of two vectors, a carry would occur
     private static boolean hasCarry(int a, int b, int base, int m) {
@@ -109,10 +102,9 @@ public class LarsAlg {
 
     public static boolean isFeasible(int[][] A, int[] rhs, int r, int h) {
         // Largest value in matrix
-        int delta = findLargestAbsValue(A);
+        int maxA = findLargestAbsValue(A);
         // Upper bound for the hereditary discrepancy
         double herDisc = DiscrepancyCalculator.hereditaryDiscrepancy(A);
-        // System.out.printf("HerDics is: %f%n", herDisc);
         // Vector length for b/rhs
         int m = rhs.length;
         // K for n-fold 
@@ -120,14 +112,10 @@ public class LarsAlg {
         for (int i = r; i < m; i++) {
             K += rhs[i];
         }
-        // System.out.printf("Value of K: %d%n", K);
         // Getting the number of iterations
         int l = (int) Math.ceil(Math.log(K) / Math.log(6.0 / 5.0));
-        // System.out.printf("Iterations: %d%n", l);
-
         // The maximum amount of vectors we can check
-        int base = Math.max(delta,maxEntry(rhs))+1;
-        // System.out.printf("Base is %d%n", base);
+        int base = Math.max(maxA,maxEntry(rhs))+1;
         // Maximum vector size that can be reached
         int maxSize = 1;
         for (int i = 0; i < m; i++){
@@ -142,21 +130,20 @@ public class LarsAlg {
                 cols[j][i] = A[i][j];
             }
         }
-        // Bulk computation
+        // Initializing for i = 0
         BitSet prev = new BitSet();
         prev.set(0);
         for (int[] v : cols) {
             prev.set(encode(v, base));
         }
 
-        // Initialize sum
+        // Declare sum
         int sum;
         // Box boundary
         double[] bound = new double[m];
         // Iterate over pairs
         int rhsEncoded = encode(rhs, base);
         for (int i = 1; i <= l; i++) {
-            // System.out.printf("Iteration: %d%n", i);
             // Initialize the next set
             BitSet next = new BitSet();
             calculateBound(rhs, bound, i, l);
@@ -205,7 +192,7 @@ public class LarsAlg {
             int h = i.getH();
             // Get the result
             boolean result = isFeasible(matrix, rhs, r, h);
-            // System.out.printf("ILP instance %d is feasible: %b%n", count, result);
+            System.out.printf("ILP instance %d is feasible: %b%n", count, result);
         }
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
