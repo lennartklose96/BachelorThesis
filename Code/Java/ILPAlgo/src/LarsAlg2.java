@@ -168,16 +168,6 @@ class MakeshiftAlg {
         // Checking feasibility
         for (Graph.Vertex v : graph.getLayer(t)) {
             if (Arrays.equals(v.v(), b)) {
-                        // For g etting the best objective value
-                        /*
-                        Graph.Vertex pathStart = graph.getLayer(0).get(0);
-                        Graph.LongestPathResult result = graph.longestPath(pathStart, v, c.length);
-                        int[] xResult = result.x();
-                        int[] costResult = result.cost();
-                        int[] mult = multiply(matrix, xResult);
-                        System.out.println(Arrays.toString(mult));
-                        System.out.println(Arrays.toString(rhs));
-                         */
                 return true;
             }
         }

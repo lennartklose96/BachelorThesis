@@ -24,9 +24,26 @@ for file_path in folder.rglob("*"):
             # Check if the file did not time out
             elapsed = None
             if len(lines) > 3:
-                match = re.fullmatch(r"Time elapsed: (\d+)", lines[3].strip())
+                line = lines[3].strip()
+                match = re.fullmatch(r"Time elapsed: (\d+)", line)
+
+                # No error detected
                 if match:
                     elapsed = int(match.group(1))
+                    error = "none"
+                # Encoding error, herDisc or BitSet limited
+                elif line in [
+                    'Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 1 out of bounds for length 1',
+                    'Exception in thread "main" java.lang.ArithmeticException: overflow in encoding'
+                ]:
+                    error = "encoding"
+                # Memory error in every other case
+                else:
+                    error = "memory"
+
+            # Two lines indicates a timeout
+            else:
+                error = "timeout"
             # Appending to final data
             data.append({
                 "algorithm": algo,
@@ -35,7 +52,8 @@ for file_path in folder.rglob("*"):
                 "block_size": params[2],
                 "block_amount": params[3],
                 "r": params[4],
-                "elapsed": elapsed
+                "elapsed": elapsed,
+                "error" : error
             })
 
 # Create data frame
