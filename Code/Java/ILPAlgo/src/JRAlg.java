@@ -3,7 +3,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 
-public class LarsAlg1 {
+public class JRAlg {
 
     /////////////////////////
     /// UTILITY FUNCTIONS ///

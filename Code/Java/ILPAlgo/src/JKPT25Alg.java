@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-public class NFoldAlgLars {
+public class JKPT25Alg {
 
     /// /////////////////////////////
     /// Generic helper functions ///
@@ -189,7 +189,7 @@ public class NFoldAlgLars {
             kVector[r] = bLowerSmalls[iteration][0];
             // Setting feasibility
 
-            if (LarsAlg1.isFeasible(ABricks[0], kVector, r, h)) {
+            if (JRAlg.isFeasible(ABricks[0], kVector, r, h)) {
                 // Set vector as feasible
                 BT.set(v);
                 // Change encoding to D vector space
@@ -206,7 +206,7 @@ public class NFoldAlgLars {
                 // Encode and add bLowerSmall_k
                 decode(kVector, v, baseK, r);
                 kVector[r] = bLowerSmalls[iteration][k];
-                if (LarsAlg1.isFeasible(ABricks[k], kVector, r, h)) {
+                if (JRAlg.isFeasible(ABricks[k], kVector, r, h)) {
                     // Set vector as feasible
                     BT.set(v);
                 }

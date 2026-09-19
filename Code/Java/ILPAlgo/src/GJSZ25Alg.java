@@ -2,7 +2,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class GuptaAlg {
+public class GJSZ25Alg {
 
     ///////////////////////////////
     /// Generic helper function ///
