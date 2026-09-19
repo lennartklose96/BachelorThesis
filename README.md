@@ -13,5 +13,3 @@ RHS <br>
 matrix <br>
 blank line <br>
 (end repeat) <br>
-
-s has been omitted for now, as it's set to s = 1
