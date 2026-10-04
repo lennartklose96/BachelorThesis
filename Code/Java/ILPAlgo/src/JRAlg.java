@@ -107,7 +107,7 @@ public class JRAlg {
         double herDisc = DiscrepancyCalculator.hereditaryDiscrepancy(A);
         // Vector length for b/rhs
         int m = rhs.length;
-        // K for n-fold 
+        // Our bound K, equal to q
         int K = 0;
         for (int i = r; i < m; i++) {
             K += rhs[i];
