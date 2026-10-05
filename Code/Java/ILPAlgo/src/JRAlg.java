@@ -171,6 +171,7 @@ public class JRAlg {
         return prev.get(rhsEncoded);
     }
 
+    // Read a specified input file to parse
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         InstanceParser p = new InstanceParser();

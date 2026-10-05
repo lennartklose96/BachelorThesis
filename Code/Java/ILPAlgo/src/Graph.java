@@ -15,7 +15,7 @@ public class Graph {
     /// CANONICALIZATION ///
     ////////////////////////
 
-    // Returning the same
+    // Create a vertex if none is there
     public Vertex getOrCreate(Vertex v) {
         return canonical.computeIfAbsent(v, k -> {
             adjacency.putIfAbsent(k, new HashSet<>());
@@ -144,6 +144,9 @@ public class Graph {
 
     public record LongestPathResult(int[] x, int[] cost) {}
 
+    // Find the longest path in a graph from the specified starting point
+    // to the specified target
+    // Unused in the implementation
     public LongestPathResult longestPath(Vertex start, Vertex target, int numberOfVariables) {
         start = canonical.get(start);
         target = canonical.get(target);

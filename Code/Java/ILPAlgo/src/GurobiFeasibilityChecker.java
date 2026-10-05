@@ -2,7 +2,7 @@ import com.gurobi.gurobi.*;
 
 public class GurobiFeasibilityChecker {
 
-    // Static env to not create environments all the time
+    // Static environment to not create  new environments all the time
     private static GRBEnv env;
     static {
         try {

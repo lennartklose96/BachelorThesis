@@ -2,7 +2,8 @@ import java.io.IOException;
 
 import com.gurobi.gurobi.*;
 
-public class Main {
+public class GurobiTest {
+    // This class is used to compare the results of different algorithms in a testing environment
     public static void main(String[] args) throws IOException, GRBException {
         InstanceParser p = new InstanceParser();
         ILPInstance[] inputs = p.parseFile("Datasets/dataset_test.txt");
